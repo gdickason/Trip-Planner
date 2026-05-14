@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Wandr</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.30.0/iconfont/tabler-icons.min.css" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1A1510;--ink-m:#4A3F32;--ink-s:#8A7A6A;--ink-xs:#B5A898;
+  --cream:#F8F2EA;--cream-d:#EEE5D8;--cream-dd:#E4D8C8;
+  --forest:#173326;--forest-m:#265540;--forest-l:#3D7A58;
+  --terra:#BE5A2A;--sky:#1A4A6E;--sky-l:#2A6A9E;
+  --white:#FEFCF8;--card:#FEFCF8;
+  --bd:rgba(26,21,16,.09);--bd-m:rgba(26,21,16,.16);--bd-s:rgba(26,21,16,.26);
+  --sh-s:0 2px 8px rgba(26,21,16,.07);--sh-m:0 6px 24px rgba(26,21,16,.11);--sh-l:0 16px 48px rgba(26,21,16,.17);
+  --rs:8px;--rm:14px;--rl:20px;--rxl:28px;
+  --ffd:'Cormorant Garamond',Georgia,serif;--ffb:'Outfit',system-ui,sans-serif;
+  --nh:64px;
+}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--ffb);background:var(--cream);color:var(--ink);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:0;height:0}
+
+/* Shell */
+.shell{width:100%;min-height:100vh;display:flex;flex-direction:column;padding-bottom:var(--nh)}
+.cx{max-width:680px;margin:0 auto;width:100%;padding:0 20px}
+
+/* Views */
+.view{display:none;flex-direction:column;flex:1;animation:vIn .3s cubic-bezier(.22,.68,0,1.2) both}
+.view.active{display:flex}
+@keyframes vIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+
+/* ═══════════════════════════════
+   DYNAMIC BOTTOM NAV
+═══════════════════════════════ */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;z-index:400;
+  height:var(--nh);background:var(--white);
+  border-top:1px solid var(--bd-m);
+  box-shadow:0 -4px 24px rgba(26,21,16,.10);
+  overflow:hidden;
+}
+.bnav-track{
+  display:flex;align-items:stretch;height:100%;
+  width:200%;
+  transition:transform .42s cubic-bezier(.4,0,.2,1);
+}
+.bnav-track.trip-mode{transform:translateX(-50%)}
+.bnav-page{
+  width:50%;display:flex;align-items:stretch;
+  max-width:680px;margin:0 auto;
+  /* each page is centered independently */
+}
+/* The two pages sit side by side */
+.bnav-home-page,.bnav-trip-page{
+  flex:1;display:flex;align-items:stretch;
+  justify-content:center;
+}
+.bnav-inner{display:flex;align-items:stretch;width:100%;max-width:680px}
+.nb{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:none;background:none;cursor:pointer;font-family:var(--ffb);
+  color:var(--ink-xs);transition:color .18s;padding:6px 4px;
+  font-size:9.5px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;
+  position:relative;
+}
+.nb i{font-size:19px;transition:transform .22s cubic-bezier(.22,.68,0,1.2)}
+.nb.active{color:var(--forest)}
+.nb.active i{transform:translateY(-2px)}
+.nb.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:2px;background:var(--forest);border-radius:2px}
+.nb-sep{width:1px;background:var(--bd);margin:14px 0;flex-shrink:0}
+
+/* Slide-in indicator for trip nav */
+.bnav-trip-page .nb{animation:nbIn .38s cubic-bezier(.22,.68,0,1.2) both}
+.bnav-trip-page .nb:nth-child(1){animation-delay:.04s}
+.bnav-trip-page .nb:nth-child(2){animation-delay:.08s}
+.bnav-trip-page .nb:nth-child(3){animation-delay:.12s}
+.bnav-trip-page .nb:nth-child(4){animation-delay:.16s}
+.bnav-trip-page .nb:nth-child(5){animation-delay:.20s}
+@keyframes nbIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Buttons */
+.btn{font-family:var(--ffb);display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .18s;border:none;outline:none;text-decoration:none;white-space:nowrap}
+.btn-f{background:var(--forest);color:var(--white);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;box-shadow:0 4px 14px rgba(23,51,38,.28)}
+.btn-f:hover{background:var(--forest-m);transform:translateY(-1px)}
+.btn-t{background:var(--terra);color:var(--white);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;box-shadow:0 4px 14px rgba(190,90,42,.28)}
+.btn-t:hover{transform:translateY(-1px)}
+.btn-sky{background:var(--sky);color:var(--white);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;box-shadow:0 4px 14px rgba(26,74,110,.28)}
+.btn-sky:hover{background:var(--sky-l);transform:translateY(-1px)}
+.btn-g{background:none;border:1px solid var(--bd-s);border-radius:30px;padding:8px 16px;font-size:13px;color:var(--ink-m)}
+.btn-g:hover{background:var(--card)}
+.btn-r{background:none;border:1px solid #D44;border-radius:30px;padding:8px 16px;font-size:13px;color:#C33}
+.btn-r:hover{background:#FFF0F0}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:20px}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* Inputs */
+input,select,textarea{font-family:var(--ffb);font-size:14px;border:1px solid var(--bd-m);border-radius:var(--rs);padding:10px 12px;background:var(--white);color:var(--ink);width:100%;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--forest);box-shadow:0 0 0 3px rgba(23,51,38,.10)}
+input::placeholder,textarea::placeholder{color:var(--ink-xs)}
+.lbl{font-size:11px;color:var(--ink-s);display:block;margin-bottom:4px;letter-spacing:.3px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg .full{grid-column:1/-1}
+.fg .fld{display:flex;flex-direction:column;gap:0}
+
+/* ═══════════════════════════════
+   HOME
+═══════════════════════════════ */
+.home-hero{
+  width:100%;background:linear-gradient(148deg,var(--forest) 0%,var(--forest-m) 60%,var(--forest-l) 100%);
+  color:var(--white);padding:48px 0 40px;position:relative;overflow:hidden;
+}
+.home-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 85% 15%,rgba(190,90,42,.32) 0%,transparent 55%);pointer-events:none}
+.home-hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:30px;background:var(--cream);clip-path:ellipse(55% 100% at 50% 100%)}
+.home-hero h1{font-family:var(--ffd);font-size:42px;font-weight:700;line-height:1.1;position:relative;z-index:1}
+.home-hero h1 em{font-style:italic;color:rgba(255,255,255,.6)}
+.home-hero-sub{font-size:13px;color:rgba(255,255,255,.45);margin-top:10px;position:relative;z-index:1}
+.home-sect{padding:24px 0 12px}
+.home-sect-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.eyebrow{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-s);font-weight:500}
+
+/* Home flight strip */
+.home-flight-strip{background:var(--sky);color:var(--white);border-radius:var(--rxl);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s}
+.home-flight-strip:hover{background:var(--sky-l);transform:translateY(-1px);box-shadow:var(--sh-m)}
+.hfs-route{font-family:var(--ffd);font-size:20px;font-weight:600;flex:1}
+.hfs-detail{font-size:12px;opacity:.65;margin-top:2px}
+.hfs-time{text-align:right;flex-shrink:0}
+.hfs-time-main{font-size:18px;font-weight:600}
+.hfs-time-lbl{font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}
+
+/* Trip card */
+.tc{border-radius:var(--rxl);overflow:hidden;cursor:pointer;margin-bottom:18px;box-shadow:var(--sh-m);transition:transform .22s cubic-bezier(.22,.68,0,1.2),box-shadow .22s ease}
+.tc:hover{transform:translateY(-3px) scale(1.005);box-shadow:var(--sh-l)}
+.tc-cover{height:148px;position:relative;display:flex;align-items:flex-end;padding:18px 20px}
+.tc-cover::before{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 20%,rgba(0,0,0,.62))}
+.tc-chiapas{background:linear-gradient(135deg,#173326 0%,#265540 45%,#3D7A58 75%,#BE5A2A 100%)}
+.tc-cover-emoji{position:absolute;right:16px;top:12px;font-size:58px;opacity:.22}
+.tc-edit-btn{position:absolute;top:12px;left:12px;z-index:2;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:14px;transition:background .15s;backdrop-filter:blur(8px)}
+.tc-edit-btn:hover{background:rgba(255,255,255,.32)}
+.tc-txt{position:relative;z-index:1}
+.tc-name{font-family:var(--ffd);font-size:25px;font-weight:700;color:var(--white);line-height:1.1}
+.tc-dates{font-size:12px;color:rgba(255,255,255,.62);margin-top:4px}
+.tc-body{padding:15px 20px 18px;background:var(--card)}
+.tc-pills{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.tc-pill{font-size:11px;color:var(--ink-s);display:flex;align-items:center;gap:4px}
+.prog-wrap{display:flex;align-items:center;gap:10px}
+.prog-bar{flex:1;height:4px;background:var(--cream-dd);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--forest),var(--terra));transition:width .6s ease}
+.prog-lbl{font-size:11px;color:var(--ink-s);white-space:nowrap}
+
+/* ═══════════════════════════════
+   TRIP BANNER
+═══════════════════════════════ */
+.trip-banner{
+  width:100%;background:linear-gradient(148deg,var(--forest) 0%,var(--forest-m) 100%);
+  color:var(--white);padding:26px 0 0;position:relative;overflow:hidden;flex-shrink:0;
+}
+.trip-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 92% 8%,rgba(190,90,42,.22) 0%,transparent 52%);pointer-events:none}
+.tb-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;position:relative;z-index:1;gap:12px}
+.tb-name{font-family:var(--ffd);font-size:28px;font-weight:700;line-height:1.1}
+.tb-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px}
+.tb-actions{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.tb-btn{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:6px 13px;font-family:var(--ffb);font-size:12px;color:rgba(255,255,255,.88);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s;backdrop-filter:blur(8px)}
+.tb-btn:hover{background:rgba(255,255,255,.26)}
+.trip-tabs{display:flex;position:relative;z-index:1;overflow-x:auto}
+.tt{font-family:var(--ffb);font-size:13px;font-weight:500;flex-shrink:0;padding:10px 18px;background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;color:rgba(255,255,255,.48);transition:all .18s;display:flex;align-items:center;gap:6px}
+.tt i{font-size:15px}
+.tt.active{color:var(--white);border-bottom-color:var(--white)}
+
+/* ═══════════════════════════════
+   DAY CHIPS + ACTIVITIES
+═══════════════════════════════ */
+.day-bar{background:var(--white);border-bottom:1px solid var(--bd);display:flex;gap:8px;padding:12px 20px;overflow-x:auto;flex-shrink:0}
+.dc{flex-shrink:0;padding:7px 14px;border-radius:30px;cursor:pointer;border:1.5px solid var(--bd-m);background:transparent;font-family:var(--ffb);font-size:11px;color:var(--ink-s);text-align:center;transition:all .2s;white-space:nowrap;line-height:1.35}
+.dc span{display:block}
+.dc .dc-d{font-weight:600;font-size:12px}
+.dc.active{background:var(--forest);color:var(--white);border-color:var(--forest);box-shadow:0 4px 12px rgba(23,51,38,.28);transform:translateY(-1px)}
+
+.acts-scroll{flex:1;overflow-y:auto}
+.acts-inner{padding:18px 0 24px}
+.day-ttl{font-family:var(--ffd);font-size:15px;font-style:italic;color:var(--ink-s);margin-bottom:16px}
+.ar{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;animation:sIn .24s ease both}
+.ar:nth-child(n){animation-delay:calc(var(--i,.0)*0.04s)}
+.at-col{min-width:42px;text-align:right;padding-top:14px;flex-shrink:0}
+.at{font-size:11px;color:var(--ink-s);font-weight:500}
+.al-col{display:flex;flex-direction:column;align-items:center;width:14px;padding-top:14px;flex-shrink:0}
+.adot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid var(--cream);box-shadow:0 0 0 1.5px currentColor}
+.athread{flex:1;width:1.5px;background:var(--bd);margin-top:4px;min-height:18px}
+
+.acard{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:var(--rm);padding:12px 14px;position:relative;overflow:hidden;min-width:0;transition:box-shadow .18s,border-color .18s}
+.acard:hover{box-shadow:var(--sh-s);border-color:var(--bd-m)}
+.acard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.acard-main{cursor:pointer}
+.acard-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.acard-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.abadge{font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;text-transform:capitalize;display:flex;align-items:center;gap:3px}
+.aloc{font-size:12px;color:var(--ink-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;display:flex;align-items:center;gap:3px}
+.achips{display:flex;gap:10px;margin-top:6px}
+.achip{font-size:11px;color:var(--ink-s);display:flex;align-items:center;gap:3px}
+/* activity action bar */
+.acard-actions{display:none;gap:6px;padding-top:10px;margin-top:10px;border-top:1px solid var(--bd)}
+.acard.expanded .acard-actions{display:flex}
+.aact-btn{font-family:var(--ffb);font-size:11px;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:16px;border:1px solid var(--bd-m);background:transparent;cursor:pointer;color:var(--ink-m);transition:all .15s}
+.aact-btn:hover{background:var(--cream-d)}
+.aact-btn.del{border-color:#E44;color:#C33}
+.aact-btn.del:hover{background:#FFF0F0}
+
+/* cat colours */
+.ca{color:#4A42AA}.ca-bg{background:#EEF0FF;color:#4A42AA}
+.cf{color:#9A6010}.cf-bg{background:#FFF5E0;color:#9A6010}
+.ctx{color:#5A6270}.ctx-bg{background:#F0F2F4;color:#5A6270}
+.cac{color:#0E8A65}.cac-bg{background:#E2F5EF;color:#0E8A65}
+.ce{color:#1060AA}.ce-bg{background:#E4F0FC;color:#1060AA}
+
+.add-act-btn{width:100%;margin-top:8px;padding:11px;border-radius:var(--rm);border:1.5px dashed var(--bd-s);background:transparent;cursor:pointer;font-family:var(--ffb);font-size:13px;color:var(--ink-s);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s}
+.add-act-btn:hover{background:var(--cream-d);color:var(--ink)}
+
+/* Edit activity inline form */
+.act-edit-form{display:none;padding-top:10px;margin-top:10px;border-top:1px solid var(--bd)}
+.acard.editing .act-edit-form{display:block}
+.acard.editing .acard-actions{display:flex}
+.ef-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.ef-grid .full{grid-column:1/-1}
+
+/* Add panel */
+.add-panel{margin-top:10px;background:var(--card);border:1px solid var(--bd-s);border-radius:var(--rl);padding:18px;animation:vIn .22s ease both}
+.ap-tabs{display:flex;margin-bottom:14px}
+.apt{font-family:var(--ffb);font-size:12px;font-weight:500;padding:7px 14px;border:1px solid var(--bd-m);background:transparent;cursor:pointer;color:var(--ink-s);transition:all .15s}
+.apt:first-child{border-radius:8px 0 0 8px}
+.apt:last-child{border-radius:0 8px 8px 0;border-left:none}
+.apt.active{background:var(--forest);color:var(--white);border-color:var(--forest)}
+
+/* ═══════════════════════════════
+   FLIGHTS - INPUT MODE
+═══════════════════════════════ */
+.flights-scroll{flex:1;overflow-y:auto}
+
+/* Autofill hero bar */
+.af-hero{
+  background:linear-gradient(135deg,var(--sky) 0%,var(--sky-l) 100%);
+  border-radius:var(--rxl);padding:20px;margin-bottom:16px;color:var(--white);
+}
+.af-hero-title{font-family:var(--ffd);font-size:20px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.af-hero-sub{font-size:12px;opacity:.6;margin-bottom:16px}
+.af-inputs{display:flex;gap:8px;flex-wrap:wrap}
+.af-inputs input{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);color:var(--white);border-radius:30px;padding:9px 14px;font-size:13px;flex:1;min-width:120px}
+.af-inputs input::placeholder{color:rgba(255,255,255,.5)}
+.af-inputs input:focus{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5);box-shadow:none}
+.af-lookup-btn{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.38);color:var(--white);border-radius:30px;padding:9px 18px;font-family:var(--ffb);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;white-space:nowrap;flex-shrink:0}
+.af-lookup-btn:hover{background:rgba(255,255,255,.35)}
+.af-lookup-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Confirmation card */
+.confirm-card{background:var(--card);border:2px solid var(--forest);border-radius:var(--rl);padding:18px;margin-bottom:14px;animation:vIn .3s ease}
+.confirm-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.confirm-card-icon{width:38px;height:38px;border-radius:10px;background:rgba(23,51,38,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.confirm-card-title{font-size:14px;font-weight:600}
+.confirm-card-sub{font-size:12px;color:var(--ink-s);margin-top:2px}
+.confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.cg-item{background:var(--cream-d);border-radius:var(--rs);padding:10px 12px}
+.cg-lbl{font-size:10px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.cg-val{font-size:13px;font-weight:600}
+.otp-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.confirm-actions{display:flex;gap:8px}
+
+/* Flight segment form (manual/edit) */
+.fl-seg{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.fl-seg-hdr{background:linear-gradient(135deg,var(--sky),var(--sky-l));color:var(--white);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.fl-seg-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.fl-seg-body{padding:16px 18px}
+.fl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.fl-grid .full{grid-column:1/-1}
+.fl-grid .fld{display:flex;flex-direction:column}
+.otp-wrap{display:flex;align-items:center;gap:10px}
+.otp-track{flex:1;height:6px;background:var(--cream-dd);border-radius:4px;overflow:hidden}
+.otp-fill{height:100%;border-radius:4px;transition:width .4s ease,background .4s ease}
+
+/* ═══════════════════════════════
+   FLIGHT MISSION CONTROL
+═══════════════════════════════ */
+.mc-wrap{padding:20px 0 24px}
+
+/* departure location bar */
+.depart-bar{background:var(--card);border:1px solid var(--bd-m);border-radius:var(--rl);padding:16px 18px;margin-bottom:20px}
+.depart-bar-title{font-size:12px;font-weight:600;color:var(--ink-s);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.depart-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.depart-row .fld{flex:2;min-width:160px;display:flex;flex-direction:column}
+.depart-row .fld-sm{flex:1;min-width:90px;display:flex;flex-direction:column}
+.buffer-val{font-size:22px;font-weight:700;color:var(--forest);margin-bottom:2px}
+.buffer-sub{font-size:11px;color:var(--ink-s)}
+
+/* MC flight card */
+.mc-card{border-radius:var(--rxl);overflow:hidden;margin-bottom:16px;box-shadow:var(--sh-m)}
+.mc-card-hero{background:linear-gradient(135deg,var(--sky) 0%,var(--sky-l) 100%);color:var(--white);padding:20px 22px}
+.mc-route{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.mc-airport{text-align:center}
+.mc-iata{font-family:var(--ffd);font-size:36px;font-weight:700;line-height:1}
+.mc-city{font-size:11px;opacity:.6;margin-top:2px}
+.mc-flight-line{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mc-flight-no{font-size:12px;opacity:.7;font-weight:500}
+.mc-line{display:flex;align-items:center;gap:4px;width:100%}
+.mc-line-track{flex:1;height:1px;background:rgba(255,255,255,.4)}
+.mc-times{display:flex;justify-content:space-between;align-items:flex-start}
+.mc-time-block{text-align:center}
+.mc-time{font-size:24px;font-weight:700;line-height:1}
+.mc-time-lbl{font-size:10px;opacity:.55;margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+.mc-airline-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18)}
+.mc-airline-lbl{font-size:12px;opacity:.6}
+.mc-airline-name{font-size:13px;font-weight:500}
+.mc-dur{font-size:12px;opacity:.65}
+.mc-card-body{background:var(--card);padding:0}
+
+/* MC stat rows */
+.mc-stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--bd)}
+.mc-stat{padding:14px 16px;border-right:1px solid var(--bd)}
+.mc-stat:last-child{border-right:none}
+.mc-stat-lbl{font-size:10px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px}
+.mc-stat-val{font-size:14px;font-weight:600}
+
+/* countdown/timer block */
+.mc-countdown{background:var(--forest);color:var(--white);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mc-countdown-left{flex:1}
+.mc-countdown-label{font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.mc-countdown-time{font-family:var(--ffd);font-size:28px;font-weight:700;line-height:1}
+.mc-countdown-sub{font-size:12px;opacity:.55;margin-top:3px}
+.mc-leave-by{text-align:right;flex-shrink:0}
+.mc-leave-lbl{font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.mc-leave-time{font-size:22px;font-weight:700;line-height:1}
+.mc-leave-detail{font-size:11px;opacity:.5;margin-top:3px}
+
+/* MC directions */
+.mc-directions{padding:14px 16px}
+.mc-dir-title{font-size:12px;font-weight:600;color:var(--ink-s);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.mc-dir-btns{display:flex;gap:8px;flex-wrap:wrap}
+.mc-dir-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:30px;border:1px solid var(--bd-s);background:transparent;font-family:var(--ffb);font-size:13px;color:var(--ink);cursor:pointer;text-decoration:none;transition:all .18s}
+.mc-dir-btn:hover{background:var(--sky);color:var(--white);border-color:var(--sky)}
+
+/* Terminal info */
+.mc-terminals{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bd)}
+.mc-terminal{padding:14px 16px;border-right:1px solid var(--bd)}
+.mc-terminal:last-child{border-right:none}
+.mc-terminal-lbl{font-size:10px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px}
+.mc-terminal-val{font-size:14px;font-weight:600}
+
+/* edit link on mc card */
+.mc-edit-link{padding:12px 16px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end}
+
+/* ═══════════════════════════════
+   HOTELS
+═══════════════════════════════ */
+.hotels-scroll{flex:1;overflow-y:auto}
+.hotel-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.hotel-hdr{background:linear-gradient(135deg,#2A4060,#1A5080);color:var(--white);padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between}
+.hotel-name{font-family:var(--ffd);font-size:20px;font-weight:600}
+.hotel-dates{font-size:12px;color:rgba(255,255,255,.55);margin-top:4px}
+.hotel-body{padding:14px 18px}
+.hotel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hotel-grid .full{grid-column:1/-1}
+.hotel-grid .fld{display:flex;flex-direction:column}
+.nights-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--white)}
+.cost-summary{background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--ink-m)}
+.add-hotel-btn{width:100%;padding:12px;border-radius:var(--rm);border:1.5px dashed var(--bd-s);background:transparent;cursor:pointer;font-family:var(--ffb);font-size:13px;color:var(--ink-s);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s}
+.add-hotel-btn:hover{background:var(--cream-d);color:var(--ink)}
+
+/* ═══════════════════════════════
+   TODOS
+═══════════════════════════════ */
+.todos-scroll{flex:1;overflow-y:auto}
+.todo-sec{margin-bottom:26px}
+.todo-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.todo-sec-ttl{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.todo-cnt{font-size:11px;color:var(--ink-s);background:var(--cream-dd);padding:2px 8px;border-radius:12px}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.todo-item:hover{box-shadow:var(--sh-s)}
+.todo-item.done{opacity:.5}
+.tcb{width:20px;height:20px;border-radius:6px;border:2px solid var(--bd-s);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.tcb.on{background:var(--forest);border-color:var(--forest)}
+.tcb.on::after{content:'';width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px);display:block}
+.todo-txt{font-size:13px;flex:1;line-height:1.4}
+.todo-item.done .todo-txt{text-decoration:line-through;color:var(--ink-s)}
+.todo-del{background:none;border:none;cursor:pointer;color:var(--ink-xs);font-size:17px;padding:1px 4px;line-height:1;transition:color .15s;flex-shrink:0}
+.todo-del:hover{color:#C33}
+.todo-add-row{display:flex;gap:8px;margin-top:8px}
+.todo-add-row input{border-radius:30px;padding:8px 14px;font-size:13px}
+
+/* ═══════════════════════════════
+   ACTIVITY DETAIL
+═══════════════════════════════ */
+.act-hero-wrap{flex-shrink:0;padding:28px 0 22px}
+.act-icon-bg{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.82);margin-bottom:14px}
+.act-hero-name{font-family:var(--ffd);font-size:30px;font-weight:700;line-height:1.1;margin-bottom:8px}
+.act-hero-sub{font-size:13px;display:flex;align-items:center;gap:8px;opacity:.65}
+.act-detail-scroll{flex:1;overflow-y:auto}
+.stat-row{display:flex;gap:8px;margin-bottom:20px}
+.stat-box{flex:1;padding:12px 14px;background:var(--card);border:1px solid var(--bd);border-radius:var(--rm)}
+.stat-lbl{font-size:10px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.stat-val{font-size:14px;font-weight:600}
+.loc-block{background:var(--card);border:1px solid var(--bd);border-radius:var(--rm);padding:14px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px}
+.loc-icon{width:32px;height:32px;border-radius:8px;background:var(--cream-dd);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notes-block{background:var(--cream-dd);border-radius:var(--rm);padding:14px;margin-bottom:18px;border-left:3px solid var(--terra)}
+.notes-block p{font-size:13.5px;line-height:1.8;color:var(--ink-m)}
+.dir-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.dir-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:30px;border:1px solid var(--bd-s);background:var(--card);font-family:var(--ffb);font-size:13px;color:var(--ink);cursor:pointer;text-decoration:none;transition:all .18s}
+.dir-btn:hover{background:var(--forest);color:var(--white);border-color:var(--forest)}
+.dir-from{font-size:11px;color:var(--ink-s);margin-bottom:18px;display:flex;align-items:center;gap:4px}
+.sec-ttl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-s);font-weight:500;margin-bottom:10px}
+.ai-panel{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:20px}
+.ai-phdr{padding:14px 16px;background:linear-gradient(135deg,var(--forest),var(--forest-m));color:var(--white);display:flex;align-items:center;gap:8px}
+.ai-pbody{padding:14px 16px}
+.ai-irow{display:flex;gap:8px;margin-bottom:10px}
+.ai-irow input{border-radius:30px;padding:9px 14px;font-size:13px}
+.ai-abtn{background:var(--terra);color:var(--white);border:none;border-radius:30px;padding:9px 16px;font-family:var(--ffb);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .18s;flex-shrink:0}
+.ai-abtn:hover{transform:translateY(-1px)}
+.qq-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.qq{font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--bd);background:var(--cream);color:var(--ink-m);cursor:pointer;font-family:var(--ffb);transition:all .15s}
+.qq:hover{background:var(--forest);color:var(--white);border-color:var(--forest)}
+.ai-ans{font-size:13.5px;line-height:1.8;color:var(--ink-m);background:var(--cream);border-radius:var(--rs);padding:14px;white-space:pre-wrap;animation:vIn .25s ease}
+.thinking{display:flex;gap:4px;align-items:center;padding:14px;color:var(--ink-s);font-size:13px}
+.thinking .d{width:6px;height:6px;border-radius:50%;background:var(--terra);animation:bo 1.2s ease infinite}
+.thinking .d:nth-child(2){animation-delay:.2s}.thinking .d:nth-child(3){animation-delay:.4s}
+@keyframes bo{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-6px);opacity:1}}
+.spin{animation:sp 1s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════
+   MODALS
+═══════════════════════════════ */
+.mo{position:fixed;inset:0;z-index:500;background:rgba(26,21,16,.52);backdrop-filter:blur(5px);display:none;align-items:flex-end;justify-content:center}
+.mo.open{display:flex;animation:fi .2s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.ms{width:100%;max-width:680px;max-height:92vh;overflow-y:auto;background:var(--white);border-radius:24px 24px 0 0;padding:0 0 32px;animation:su .3s cubic-bezier(.22,.68,0,1.2)}
+@keyframes su{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.ms-handle{width:40px;height:4px;background:var(--bd-s);border-radius:4px;margin:14px auto 0}
+.ms-hdr{padding:16px 24px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+.ms-title{font-family:var(--ffd);font-size:24px;font-weight:600}
+.ms-close{background:none;border:none;cursor:pointer;font-size:26px;color:var(--ink-s);padding:2px;line-height:1}
+.ms-body{padding:20px 24px}
+.ms-acts{padding:16px 24px 0;display:flex;gap:10px;flex-wrap:wrap}
+.member-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.mchip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--cream-dd);border:1px solid var(--bd-m);font-size:13px;color:var(--ink-m)}
+.mchip button{background:none;border:none;cursor:pointer;color:var(--ink-s);font-size:16px;padding:0;line-height:1}
+.mchip button:hover{color:#C33}
+.add-member-row{display:flex;gap:8px}
+.add-member-row input{border-radius:30px;padding:8px 14px;font-size:13px}
+.ep{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.eo{width:38px;height:38px;border-radius:10px;border:2px solid var(--bd);background:var(--cream);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.eo.sel{border-color:var(--forest);background:rgba(23,51,38,.08)}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(var(--nh) + 16px);left:50%;transform:translateX(-50%) translateY(18px);background:var(--ink);color:var(--white);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .28s ease;z-index:600;white-space:nowrap;pointer-events:none;box-shadow:var(--sh-m)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.hero-back{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:20px;padding:6px 13px;font-family:var(--ffb);font-size:12px;color:rgba(255,255,255,.9);cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-bottom:16px;backdrop-filter:blur(8px);transition:background .15s}
+.hero-back:hover{background:rgba(255,255,255,.30)}
+.drive-info{background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--ink-m);display:flex;align-items:center;gap:7px}
+.divider{height:1px;background:var(--bd);margin:14px 0}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ════ HOME ════ -->
+<div class="view active" id="v-home">
+  <div class="home-hero">
+    <div class="cx">
+      <div class="eyebrow" style="color:rgba(255,255,255,.42);margin-bottom:10px">Your journeys</div>
+      <h1>Where are we<br/><em>going next?</em></h1>
+      <p class="home-hero-sub">Tap a trip to open the planner</p>
+    </div>
+  </div>
+  <div class="home-sect">
+    <div class="cx">
+      <div id="home-flights-wrap"></div>
+      <div class="home-sect-hdr">
+        <span class="eyebrow">My trips</span>
+        <button class="btn btn-f btn-sm" onclick="openNewTrip()"><i class="ti ti-plus"></i> New trip</button>
+      </div>
+      <div id="trip-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TRIP ════ -->
+<div class="view" id="v-trip">
+  <div class="trip-banner" id="trip-banner">
+    <div class="cx">
+      <div class="tb-top">
+        <div><div class="tb-name" id="tb-name"></div><div class="tb-sub" id="tb-sub"></div></div>
+        <div class="tb-actions">
+          <button class="tb-btn" onclick="goHome()"><i class="ti ti-arrow-left"></i> Home</button>
+          <button class="tb-btn" onclick="openEditTrip()"><i class="ti ti-pencil"></i> Edit</button>
+          <button class="tb-btn"><i class="ti ti-share"></i> Share</button>
+        </div>
+      </div>
+      <div class="trip-tabs">
+        <button class="tt active" id="tt-itin"    onclick="setTab('itin')"><i class="ti ti-calendar-event"></i> Itinerary</button>
+        <button class="tt"        id="tt-flights"  onclick="setTab('flights')"><i class="ti ti-plane"></i> Flights</button>
+        <button class="tt"        id="tt-hotels"   onclick="setTab('hotels')"><i class="ti ti-building"></i> Hotels</button>
+        <button class="tt"        id="tt-todos"    onclick="setTab('todos')"><i class="ti ti-checklist"></i> Checklist</button>
+      </div>
+    </div>
+  </div>
+  <div id="pane-itin" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="day-bar" id="day-bar"></div>
+    <div class="acts-scroll"><div class="acts-inner cx" id="acts"></div></div>
+  </div>
+  <div id="pane-flights" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="flights-scroll"><div class="cx" id="flights-body" style="padding:20px 20px 28px"></div></div>
+  </div>
+  <div id="pane-hotels" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="hotels-scroll"><div class="cx" id="hotels-body" style="padding:20px 20px 28px"></div></div>
+  </div>
+  <div id="pane-todos" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="todos-scroll"><div class="cx" id="todos-body" style="padding:20px 20px 28px"></div></div>
+  </div>
+</div>
+
+<!-- ════ ACTIVITY DETAIL ════ -->
+<div class="view" id="v-act">
+  <div class="act-hero-wrap" id="act-hero">
+    <div class="cx">
+      <button class="hero-back" onclick="goTrip()"><i class="ti ti-arrow-left"></i> Back</button>
+      <div class="act-icon-bg" id="act-icon"></div>
+      <div class="act-hero-name" id="act-name"></div>
+      <div class="act-hero-sub" id="act-sub"></div>
+    </div>
+  </div>
+  <div class="act-detail-scroll"><div class="cx" id="act-body" style="padding-bottom:28px"></div></div>
+</div>
+
+</div><!-- end shell -->
+
+<!-- ════ DYNAMIC BOTTOM NAV ════ -->
+<nav class="bnav" id="bnav">
+  <div class="bnav-track" id="bnav-track">
+    <!-- Home page -->
+    <div class="bnav-home-page" style="width:50%;display:flex;max-width:680px;margin:0 auto">
+      <div class="bnav-inner" id="nb-home-inner">
+        <button class="nb active" id="hn-trips"   onclick="goHome()"><i class="ti ti-home-2"></i>Home</button>
+        <button class="nb" id="hn-flights" onclick="homeGoFlights()"><i class="ti ti-plane"></i>Flights</button>
+        <button class="nb" id="hn-hotels"  onclick="homeGoHotels()"><i class="ti ti-building"></i>Hotels</button>
+        <button class="nb" id="hn-new"     onclick="openNewTrip()"><i class="ti ti-plus"></i>New trip</button>
+      </div>
+    </div>
+    <!-- Trip page -->
+    <div class="bnav-trip-page" style="width:50%;display:flex;max-width:680px;margin:0 auto">
+      <div class="bnav-inner" id="nb-trip-inner">
+        <button class="nb" id="tn-home"    onclick="goHome()"><i class="ti ti-arrow-left"></i>Home</button>
+        <div class="nb-sep"></div>
+        <button class="nb" id="tn-itin"    onclick="navTo('itin')"><i class="ti ti-calendar-event"></i>Days</button>
+        <button class="nb" id="tn-flights" onclick="navTo('flights')"><i class="ti ti-plane"></i>Flights</button>
+        <button class="nb" id="tn-hotels"  onclick="navTo('hotels')"><i class="ti ti-building"></i>Hotels</button>
+        <button class="nb" id="tn-todos"   onclick="navTo('todos')"><i class="ti ti-checklist"></i>List</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════ MODAL: Trip edit/create ════ -->
+<div class="mo" id="mo-trip" onclick="bgClose(event,'mo-trip')">
+  <div class="ms">
+    <div class="ms-handle"></div>
+    <div class="ms-hdr">
+      <span class="ms-title" id="mo-trip-title">New trip</span>
+      <button class="ms-close" onclick="closeM('mo-trip')">&times;</button>
+    </div>
+    <div class="ms-body">
+      <div class="fg" style="gap:10px">
+        <div class="full fld"><label class="lbl">Trip name</label><input id="mt-name" placeholder="e.g. Chiapas, Mexico"/></div>
+        <div class="full"><label class="lbl">Icon</label><div class="ep" id="ep"></div></div>
+        <div class="fld"><label class="lbl">Start date</label><input id="mt-start" placeholder="May 22, 2026"/></div>
+        <div class="fld"><label class="lbl">End date</label><input id="mt-end" placeholder="May 27, 2026"/></div>
+        <div class="full">
+          <label class="lbl">Trip members</label>
+          <div class="member-chips" id="mchips"></div>
+          <div class="add-member-row">
+            <input id="m-inp" placeholder="Add a person..." onkeydown="if(event.key==='Enter')addMember()"/>
+            <button class="btn btn-f btn-sm" onclick="addMember()"><i class="ti ti-plus"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ms-acts">
+      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="saveTrip()"><i class="ti ti-check"></i> Save trip</button>
+      <button class="btn btn-r" id="mo-del" onclick="deleteTrip()" style="display:none"><i class="ti ti-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: Edit activity ════ -->
+<div class="mo" id="mo-act" onclick="bgClose(event,'mo-act')">
+  <div class="ms">
+    <div class="ms-handle"></div>
+    <div class="ms-hdr">
+      <span class="ms-title">Edit activity</span>
+      <button class="ms-close" onclick="closeM('mo-act')">&times;</button>
+    </div>
+    <div class="ms-body">
+      <div class="fg" style="gap:8px">
+        <div class="full fld"><label class="lbl">Activity name</label><input id="ea-name" placeholder="Activity name"/></div>
+        <div class="full fld"><label class="lbl">Location</label><input id="ea-loc" placeholder="Address or area"/></div>
+        <div class="fld"><label class="lbl">Time</label><input id="ea-time" placeholder="14:00"/></div>
+        <div class="fld"><label class="lbl">Category</label>
+          <select id="ea-cat">
+            <option value="activity">Activity</option>
+            <option value="food">Food</option>
+            <option value="explore">Explore</option>
+            <option value="transport">Transport</option>
+            <option value="accommodation">Accommodation</option>
+          </select>
+        </div>
+        <div class="fld"><label class="lbl">Cost</label><input id="ea-cost" placeholder="$20/person"/></div>
+        <div class="fld"><label class="lbl">Duration</label><input id="ea-dur" placeholder="3h"/></div>
+        <div class="full fld"><label class="lbl">Notes</label><textarea id="ea-notes" rows="3" placeholder="Tips, logistics..."></textarea></div>
+      </div>
+    </div>
+    <div class="ms-acts">
+      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="saveActEdit()"><i class="ti ti-check"></i> Save changes</button>
+      <button class="btn btn-r" onclick="deleteAct()"><i class="ti ti-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════ DATA ═══════════ */
+const SK="wandr-v4";
+const EMOJIS=["🌿","🏔️","☀️","🌊","🏕️","🗺️","✈️","🌺","🎒","🍵","🦜","🌄","🏖️","🧭","🍃"];
+const CAT={
+  transport:    {icon:"ti-car",     dot:"#5A6270",bg:"ctx-bg",txt:"ctx",hbg:"#2A2E34",htxt:"#F0F2F4"},
+  accommodation:{icon:"ti-building",dot:"#0E8A65",bg:"cac-bg",txt:"cac",hbg:"#0A3D2C",htxt:"#E2F5EF"},
+  food:         {icon:"ti-coffee",  dot:"#9A6010",bg:"cf-bg", txt:"cf", hbg:"#4A2E08",htxt:"#FFF5E0"},
+  activity:     {icon:"ti-mountain",dot:"#4A42AA",bg:"ca-bg", txt:"ca", hbg:"#22207A",htxt:"#EEF0FF"},
+  explore:      {icon:"ti-compass", dot:"#1060AA",bg:"ce-bg", txt:"ce", hbg:"#082850",htxt:"#E4F0FC"},
+};
+
+const BASE=[{
+  id:"chiapas-2026",name:"Chiapas, Mexico",
+  dates:"May 22 to 27, 2026",emoji:"🌿",cover:"tc-chiapas",
+  people:["You","Partner","Her parents"],
+  flights:{
+    out:{airline:"",fno:"",from:"",to:"TGZ",fromFull:"",toFull:"Tuxtla Gutiérrez (TGZ)",ddep:"May 22, 2026",tdep:"",darr:"May 22, 2026",tarr:"",dur:"",otp:0,depTerminal:"",arrTerminal:"",conf:"",notes:"",confirmed:false},
+    ret:{airline:"",fno:"",from:"TGZ",to:"",fromFull:"Tuxtla Gutiérrez (TGZ)",toFull:"",ddep:"May 27, 2026",tdep:"",darr:"May 27, 2026",tarr:"",dur:"",otp:0,depTerminal:"",arrTerminal:"",conf:"",notes:"",confirmed:false}
+  },
+  departureLocation:"",bufferMinutes:90,
+  hotels:[
+    {id:"h1",name:"Mandarina's House Hotel",cin:"May 22, 2026",cout:"May 23, 2026",cit:"15:00",addr:"Tuxtla Gutiérrez, Chiapas",conf:"",ppn:"50",notes:"Rating 4.9. Breakfast included. 1 block from Parque Central."},
+    {id:"h2",name:"Collection O Casa de Familia",cin:"May 23, 2026",cout:"May 26, 2026",cit:"14:00",addr:"San Cristóbal de las Casas, Chiapas",conf:"",ppn:"49",notes:"19th-century building. Heated floors, garden, on-site restaurant. 3 min walk to the cathedral."},
+    {id:"h3",name:"Mandarina's House Hotel",cin:"May 26, 2026",cout:"May 27, 2026",cit:"15:00",addr:"Tuxtla Gutiérrez, Chiapas",conf:"",ppn:"50",notes:"Last night before departure."},
+  ],
+  days:[
+    {id:"d1",date:"Thu May 22",label:"Arrival in Tuxtla",activities:[
+      {id:"a1",time:"16:00",name:"Land at TGZ Airport",location:"Aeropuerto Ángel Albino Corzo, Tuxtla Gutiérrez, Chiapas",category:"transport",notes:"Pick up the rental car. City center is about 30 min away.",cost:"",duration:"30 min"},
+      {id:"a2",time:"17:00",name:"Check in at Mandarina's House Hotel",location:"Mandarina's House Hotel, Tuxtla Gutiérrez, Chiapas",category:"accommodation",notes:"Rated 4.9. Breakfast included. One block from Parque Central.",cost:"~$50/night",duration:""},
+      {id:"a3",time:"19:30",name:"Dinner at Parque de la Marimba",location:"Parque de la Marimba, Tuxtla Gutiérrez, Chiapas",category:"food",notes:"Live marimba music most evenings. Food stalls ring the park.",cost:"$8 to $15/person",duration:"2h"},
+    ]},
+    {id:"d2",date:"Fri May 23",label:"Sumidero Canyon",activities:[
+      {id:"a4",time:"08:00",name:"Breakfast at hotel",location:"Mandarina's House Hotel, Tuxtla Gutiérrez",category:"food",notes:"Included with your stay.",cost:"Included",duration:"45 min"},
+      {id:"a5",time:"09:30",name:"Cañón del Sumidero",location:"Cañón del Sumidero, Chiapa de Corzo, Chiapas",category:"activity",notes:"Canyon walls rise up to 1 km. Boat tour is accessible for all fitness levels. Kayak option also available.",cost:"$15 to $25/person",duration:"3h"},
+      {id:"a6",time:"13:30",name:"Lunch in Chiapa de Corzo",location:"Chiapa de Corzo, Chiapas",category:"food",notes:"Colonial town at the canyon entrance. Try pepita con tasajo.",cost:"$10 to $15/person",duration:"1.5h"},
+      {id:"a7",time:"15:30",name:"Drive to San Cristóbal",location:"San Cristóbal de las Casas, Chiapas",category:"transport",notes:"About 1.5h via MEX-190. Elevation climbs from 500m to 2,200m.",cost:"",duration:"1.5h"},
+      {id:"a8",time:"17:30",name:"Check in at Casa de Familia",location:"Collection O Casa de Familia, San Cristóbal de las Casas, Chiapas",category:"accommodation",notes:"19th-century building. Heated floors, garden, restaurant. 3 min walk to the cathedral.",cost:"~$49/night",duration:""},
+      {id:"a9",time:"20:00",name:"Evening stroll on Real de Guadalupe",location:"Real de Guadalupe, San Cristóbal de las Casas, Chiapas",category:"explore",notes:"Main pedestrian street. Textiles, crafts, mezcal bars, specialty coffee.",cost:"",duration:"1.5h"},
+    ]},
+    {id:"d3",date:"Sat May 24",label:"Coffee and Culture",activities:[
+      {id:"a10",time:"08:30",name:"Breakfast at Casa de Familia",location:"Collection O Casa de Familia, San Cristóbal de las Casas",category:"food",notes:"",cost:"",duration:"45 min"},
+      {id:"a11",time:"10:00",name:"Coffee Farm Day Trip",location:"Tzeltal highlands near San Cristóbal de las Casas, Chiapas",category:"activity",notes:"Visit an indigenous Tzeltal family farm. Full coffee process from harvest to cup. Rich cultural exchange. Book via a local tour operator.",cost:"$30 to $40/person",duration:"5h"},
+      {id:"a12",time:"16:30",name:"Mercado de Santo Domingo",location:"Mercado de Artesanías Santo Domingo, San Cristóbal de las Casas",category:"explore",notes:"Best craft market in Chiapas. Amber jewelry, hand-embroidered textiles, Mayan crafts.",cost:"",duration:"2h"},
+      {id:"a13",time:"19:30",name:"Chiapaneco dinner",location:"San Cristóbal de las Casas historic center",category:"food",notes:"Try cochito chiapaneco or tamales de chipilín.",cost:"$12 to $20/person",duration:"2h"},
+    ]},
+    {id:"d4",date:"Sun May 25",label:"Nature Day",activities:[
+      {id:"a14",time:"08:00",name:"Breakfast and pack day bag",location:"Casa de Familia, San Cristóbal de las Casas",category:"food",notes:"",cost:"",duration:"1h"},
+      {id:"a15",time:"10:00",name:"El Arcotete Eco Park",location:"Parque Ecoturístico El Arcotete, San Cristóbal de las Casas",category:"activity",notes:"20 min from the city. Limestone arch over the Fogótico River. Hiking, zip-line, rappelling, horseback riding, cave exploration.",cost:"$5 entry plus activities",duration:"4h"},
+      {id:"a16",time:"15:30",name:"Specialty coffee crawl",location:"San Cristóbal de las Casas, Chiapas",category:"explore",notes:"Third-wave coffee scene. Great afternoon to explore on foot.",cost:"$3 to $6/drink",duration:"2.5h"},
+      {id:"a17",time:"19:30",name:"Mezcal tasting and farewell dinner",location:"San Cristóbal de las Casas, Chiapas",category:"food",notes:"Chiapas mezcal is distinct from Oaxacan. Worth a guided tasting.",cost:"$20 to $35/person",duration:"2.5h"},
+    ]},
+    {id:"d5",date:"Mon May 26",label:"Back to Tuxtla",activities:[
+      {id:"a18",time:"09:00",name:"Final morning in San Cristóbal",location:"San Cristóbal de las Casas, Chiapas",category:"explore",notes:"Last coffee, final stroll, check out by noon.",cost:"",duration:"3h"},
+      {id:"a19",time:"12:30",name:"Drive back to Tuxtla",location:"Tuxtla Gutiérrez, Chiapas",category:"transport",notes:"About 1.5h via MEX-190.",cost:"",duration:"1.5h"},
+      {id:"a20",time:"14:30",name:"Lunch in Tuxtla",location:"Tuxtla Gutiérrez, Chiapas",category:"food",notes:"",cost:"$10 to $15/person",duration:"1h"},
+      {id:"a21",time:"18:00",name:"Check in at Mandarina's House Hotel",location:"Mandarina's House Hotel, Tuxtla Gutiérrez, Chiapas",category:"accommodation",notes:"Last night before departure.",cost:"~$50/night",duration:""},
+      {id:"a22",time:"20:00",name:"Celebratory farewell dinner",location:"Tuxtla Gutiérrez, Chiapas",category:"food",notes:"",cost:"",duration:"2h"},
+    ]},
+    {id:"d6",date:"Tue May 27",label:"Departure",activities:[
+      {id:"a23",time:"07:00",name:"Breakfast and check out",location:"Mandarina's House Hotel, Tuxtla Gutiérrez",category:"food",notes:"Breakfast included. Allow 2 hrs before your flight.",cost:"Included",duration:"1h"},
+      {id:"a24",time:"08:30",name:"Head to TGZ Airport",location:"Aeropuerto Ángel Albino Corzo, Tuxtla Gutiérrez, Chiapas",category:"transport",notes:"Return rental car. Arrive 2 hrs before your flight.",cost:"",duration:"30 min"},
+    ]},
+  ],
+  todos:{
+    pretrip:[
+      {id:"pt1",text:"Book flights to/from Tuxtla Gutiérrez (TGZ)",done:false},
+      {id:"pt2",text:"Reserve Mandarina's House Hotel — May 22 and 26",done:false},
+      {id:"pt3",text:"Reserve Collection O Casa de Familia — May 23 to 25",done:false},
+      {id:"pt4",text:"Book Sumidero Canyon boat or kayak tour",done:false},
+      {id:"pt5",text:"Book coffee farm day trip from San Cristóbal",done:false},
+      {id:"pt6",text:"Arrange rental car for full trip",done:false},
+      {id:"pt7",text:"Get travel insurance for Mexico",done:false},
+      {id:"pt8",text:"Exchange cash to MXN before departure",done:false},
+      {id:"pt9",text:"Download offline Google Maps for Chiapas",done:false},
+      {id:"pt10",text:"Check passport validity (6+ months past departure date)",done:false},
+    ],
+    packing:[
+      {id:"pk1",text:"Rain jacket — late May is the start of rainy season",done:false},
+      {id:"pk2",text:"Warm layer — San Cristóbal sits at 7,000 ft and is cool at night",done:false},
+      {id:"pk3",text:"Sunscreen and bug spray",done:false},
+      {id:"pk4",text:"Hiking shoes",done:false},
+      {id:"pk5",text:"Swimwear for Sumidero Canyon and natural pools",done:false},
+      {id:"pk6",text:"Dry bag for kayaking",done:false},
+      {id:"pk7",text:"Portable charger and power bank",done:false},
+      {id:"pk8",text:"Camera or GoPro",done:false},
+      {id:"pk9",text:"Lightweight daypack",done:false},
+      {id:"pk10",text:"Reusable water bottle",done:false},
+    ]
+  }
+}];
+
+/* ═══════════ STATE ═══════════ */
+let trips=JSON.parse(JSON.stringify(BASE));
+let tid=null,did=null,curAct=null,curActDid=null,tab="itin";
+let addOpen=false,addTabMode="manual",aiSV="",newA=ba();
+let editTid=null,mMembers=[],mEmoji="🌿";
+let editingActId=null;
+let aiQ2="",aiA2="";
+
+function ba(){return{time:"09:00",name:"",location:"",category:"activity",notes:"",cost:"",duration:""}}
+function T(){return trips.find(t=>t.id===tid)||null}
+function D(){return T()?.days.find(d=>d.id===did)||null}
+
+/* ═══════════ STORAGE ═══════════ */
+async function save(){try{await window.storage.set(SK,JSON.stringify(trips))}catch(e){}}
+async function load(){try{const r=await window.storage.get(SK);if(r?.value)trips=JSON.parse(r.value)}catch(e){}}
+
+/* ═══════════ NAV ═══════════ */
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el=document.getElementById('v-'+id);
+  el.classList.add('active');el.style.animation='none';el.offsetHeight;el.style.animation='';
+}
+
+function setNavMode(mode){
+  const track=document.getElementById('bnav-track');
+  track.classList.toggle('trip-mode',mode==='trip');
+}
+
+function setTripNB(active){
+  ['itin','flights','hotels','todos'].forEach(k=>{
+    document.getElementById('tn-'+k)?.classList.toggle('active',k===active);
+  });
+}
+
+function goHome(){
+  tid=null;renderHome();showView('home');setNavMode('home');
+  // reset home nav active
+  document.querySelectorAll('#nb-home-inner .nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('hn-trips').classList.add('active');
+}
+
+function goTrip(){
+  if(!tid){goHome();return}
+  setTab(tab);renderBanner();showView('trip');setNavMode('trip');
+}
+
+function navTo(t){if(!tid)return;setTab(t);renderBanner();showView('trip');setNavMode('trip');setTripNB(t)}
+
+function homeGoFlights(){
+  // jump to first trip with flights
+  const t=trips[0];if(!t)return;
+  tid=t.id;did=t.days[0].id;
+  navTo('flights');
+}
+function homeGoHotels(){
+  const t=trips[0];if(!t)return;
+  tid=t.id;did=t.days[0].id;
+  navTo('hotels');
+}
+
+/* ═══════════ HOME ═══════════ */
+function renderHome(){
+  renderHomeFlights();
+  const c=document.getElementById('trip-cards');c.innerHTML='';
+  trips.forEach(t=>{
+    const all=[...t.todos.pretrip,...t.todos.packing];
+    const done=all.filter(i=>i.done).length;
+    const pct=all.length?Math.round(done/all.length*100):0;
+    const acts=t.days.reduce((s,d)=>s+d.activities.length,0);
+    const card=document.createElement('div');card.className='tc';
+    card.innerHTML=`
+      <div class="tc-cover ${t.cover||'tc-chiapas'}">
+        <div class="tc-cover-emoji">${t.emoji}</div>
+        <button class="tc-edit-btn" onclick="event.stopPropagation();openEditTrip('${t.id}')"><i class="ti ti-pencil"></i></button>
+        <div class="tc-txt">
+          <div class="tc-name">${t.name}</div>
+          <div class="tc-dates">${t.dates}</div>
+        </div>
+      </div>
+      <div class="tc-body">
+        <div class="tc-pills">
+          <span class="tc-pill"><i class="ti ti-calendar"></i>${t.days.length} days</span>
+          <span class="tc-pill"><i class="ti ti-map-pin"></i>${acts} activities</span>
+          <span class="tc-pill"><i class="ti ti-users"></i>${t.people.join(', ')}</span>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <span class="prog-lbl">${done}/${all.length} todos</span>
+        </div>
+      </div>`;
+    card.addEventListener('click',()=>{tid=t.id;did=t.days[0].id;tab="itin";addOpen=false;navTo("itin")});
+    c.appendChild(card);
+  });
+}
+
+function renderHomeFlights(){
+  const wrap=document.getElementById('home-flights-wrap');wrap.innerHTML='';
+  trips.forEach(t=>{
+    ['out','ret'].forEach(key=>{
+      const f=t.flights[key];
+      if(!f.confirmed||!f.fno)return;
+      const strip=document.createElement('div');strip.className='home-flight-strip';
+      const from=f.fromFull||f.from||'?';const to=f.toFull||f.to||'?';
+      strip.innerHTML=`
+        <div><div class="hfs-route">${from.split('(')[0].trim()} <i class="ti ti-arrow-right" style="font-size:14px;opacity:.7"></i> ${to.split('(')[0].trim()}</div>
+        <div class="hfs-detail">${f.airline} ${f.fno} · ${f.ddep}</div></div>
+        <div class="hfs-time"><div class="hfs-time-main">${f.tdep||'TBD'}</div><div class="hfs-time-lbl">Departs</div></div>`;
+      strip.onclick=()=>{tid=t.id;did=t.days[0].id;navTo('flights')};
+      wrap.appendChild(strip);
+    });
+  });
+}
+
+/* ═══════════ BANNER ═══════════ */
+function renderBanner(){
+  const t=T();if(!t)return;
+  document.getElementById('tb-name').textContent=t.name;
+  document.getElementById('tb-sub').textContent=`${t.dates} · ${t.people.join(', ')}`;
+}
+
+function setTab(t){
+  tab=t;
+  ['itin','flights','hotels','todos'].forEach(k=>{
+    document.getElementById('tt-'+k)?.classList.toggle('active',k===t);
+    const p=document.getElementById('pane-'+k);
+    if(p){p.style.display=k===t?'flex':'none';if(k===t)p.style.flexDirection='column'}
+  });
+  const tr=T();if(!tr)return;
+  if(t==='itin'){renderDays();renderActs()}
+  else if(t==='flights')renderFlights();
+  else if(t==='hotels')renderHotels();
+  else if(t==='todos')renderTodos();
+  setTripNB(t);
+}
+
+/* ═══════════ ACTIVITIES ═══════════ */
+function renderDays(){
+  const t=T();const bar=document.getElementById('day-bar');bar.innerHTML='';
+  t.days.forEach(d=>{
+    const b=document.createElement('button');
+    b.className='dc'+(d.id===did?' active':'');
+    b.innerHTML=`<span class="dc-d">${d.date}</span><span>${d.label}</span>`;
+    b.onclick=()=>{did=d.id;addOpen=false;renderDays();renderActs()};
+    bar.appendChild(b);
+  });
+}
+
+function renderActs(){
+  const t=T();const d=D();const list=document.getElementById('acts');list.innerHTML='';
+  if(!d)return;
+  const hdr=document.createElement('div');hdr.className='day-ttl';
+  hdr.textContent=`${d.date} · ${d.label}`;list.appendChild(hdr);
+
+  d.activities.forEach((a,i)=>{
+    const cat=CAT[a.category]||CAT.activity;
+    const isLast=i===d.activities.length-1;
+    const row=document.createElement('div');row.className='ar';row.style.setProperty('--i',i);
+    row.innerHTML=`
+      <div class="at-col"><span class="at">${a.time}</span></div>
+      <div class="al-col">
+        <div class="adot" style="color:${cat.dot}"></div>
+        ${!isLast?'<div class="athread"></div>':''}
+      </div>
+      <div class="acard" id="acard-${a.id}">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${cat.dot};border-radius:3px 0 0 3px"></div>
+        <div class="acard-main" onclick="openActDetail('${a.id}')">
+          <div class="acard-top">
+            <span class="acard-name">${a.name}</span>
+            <span class="abadge ${cat.bg}"><i class="ti ${cat.icon}"></i>${a.category}</span>
+          </div>
+          ${a.location?`<div class="aloc"><i class="ti ti-map-pin" style="font-size:11px;flex-shrink:0"></i>${a.location.split(',').slice(0,2).join(',')}</div>`:''}
+          <div class="achips">
+            ${a.duration?`<span class="achip"><i class="ti ti-clock" style="font-size:11px"></i>${a.duration}</span>`:''}
+            ${a.cost?`<span class="achip"><i class="ti ti-coin" style="font-size:11px"></i>${a.cost}</span>`:''}
+          </div>
+        </div>
+        <div class="acard-actions">
+          <button class="aact-btn" onclick="openEditAct('${a.id}','${d.id}')"><i class="ti ti-pencil" style="font-size:12px"></i> Edit</button>
+          <button class="aact-btn" onclick="openActDetail('${a.id}')"><i class="ti ti-arrow-right" style="font-size:12px"></i> Details</button>
+          <button class="aact-btn del" onclick="deleteActById('${a.id}','${d.id}')"><i class="ti ti-trash" style="font-size:12px"></i> Delete</button>
+        </div>
+      </div>`;
+    // long press or swipe — for desktop we toggle on right-click, on touch we use a button
+    const card=row.querySelector('.acard');
+    let pressTimer;
+    card.addEventListener('contextmenu',e=>{e.preventDefault();toggleActExpand(a.id)});
+    card.addEventListener('touchstart',()=>{pressTimer=setTimeout(()=>toggleActExpand(a.id),500)},{passive:true});
+    card.addEventListener('touchend',()=>clearTimeout(pressTimer),{passive:true});
+    list.appendChild(row);
+  });
+
+  // Swipe hint
+  const hint=document.createElement('p');
+  hint.style.cssText='font-size:11px;color:var(--ink-xs);text-align:center;margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:4px';
+  hint.innerHTML=`<i class="ti ti-dots" style="font-size:13px"></i> Tap an activity to view · Long-press or right-click for edit/delete`;
+  list.appendChild(hint);
+
+  if(!addOpen){
+    const btn=document.createElement('button');btn.className='add-act-btn';
+    btn.innerHTML=`<i class="ti ti-plus"></i> Add activity to ${d.date}`;
+    btn.onclick=()=>{addOpen=true;newA=ba();renderActs()};
+    list.appendChild(btn);
+  } else {
+    list.appendChild(buildAddPanel(t,d));
+  }
+}
+
+function toggleActExpand(id){
+  const card=document.getElementById('acard-'+id);
+  if(!card)return;
+  const isExp=card.classList.contains('expanded');
+  document.querySelectorAll('.acard.expanded').forEach(c=>c.classList.remove('expanded'));
+  if(!isExp)card.classList.add('expanded');
+}
+
+function openEditAct(actId,dayId){
+  const t=T();
+  const d=t.days.find(x=>x.id===dayId);
+  const a=d?.activities.find(x=>x.id===actId);
+  if(!a)return;
+  editingActId=actId;curActDid=dayId;
+  document.getElementById('ea-name').value=a.name||'';
+  document.getElementById('ea-loc').value=a.location||'';
+  document.getElementById('ea-time').value=a.time||'';
+  document.getElementById('ea-cat').value=a.category||'activity';
+  document.getElementById('ea-cost').value=a.cost||'';
+  document.getElementById('ea-dur').value=a.duration||'';
+  document.getElementById('ea-notes').value=a.notes||'';
+  openM('mo-act');
+}
+
+function saveActEdit(){
+  if(!editingActId)return;
+  trips=trips.map(t=>{
+    if(t.id!==tid)return t;
+    return{...t,days:t.days.map(d=>{
+      if(d.id!==curActDid)return d;
+      return{...d,activities:d.activities.map(a=>{
+        if(a.id!==editingActId)return a;
+        return{...a,
+          name:document.getElementById('ea-name').value,
+          location:document.getElementById('ea-loc').value,
+          time:document.getElementById('ea-time').value||a.time,
+          category:document.getElementById('ea-cat').value,
+          cost:document.getElementById('ea-cost').value,
+          duration:document.getElementById('ea-dur').value,
+          notes:document.getElementById('ea-notes').value,
+        };
+      }).sort((a,b)=>a.time.localeCompare(b.time))};
+    })};
+  });
+  save();closeM('mo-act');renderActs();renderDays();toast('Activity updated');
+}
+
+function deleteAct(){
+  if(!editingActId)return;
+  if(!confirm('Delete this activity?'))return;
+  deleteActById(editingActId,curActDid);
+  closeM('mo-act');
+}
+
+function deleteActById(actId,dayId){
+  trips=trips.map(t=>{
+    if(t.id!==tid)return t;
+    return{...t,days:t.days.map(d=>{
+      if(d.id!==dayId)return d;
+      return{...d,activities:d.activities.filter(a=>a.id!==actId)};
+    })};
+  });
+  save();renderActs();renderDays();toast('Activity deleted');
+}
+
+function openActDetail(actId){
+  const t=T();
+  let found=null,prev=null;
+  for(const d of t.days){
+    const i=d.activities.findIndex(a=>a.id===actId);
+    if(i>=0){found=d.activities[i];if(i>0)prev=d.activities[i-1];break}
+  }
+  if(!found)return;
+  curAct=found;renderActDetail(found,t,prev);showView('act');
+}
+
+/* Add panel */
+function buildAddPanel(t,d){
+  const div=document.createElement('div');div.className='add-panel';
+  div.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="ap-tabs">
+        <button class="apt ${addTabMode==='manual'?'active':''}" onclick="swATab('manual')">Manual</button>
+        <button class="apt ${addTabMode==='ai'?'active':''}" onclick="swATab('ai')">AI Research</button>
+      </div>
+      <button onclick="addOpen=false;renderActs()" style="background:none;border:none;cursor:pointer;color:var(--ink-s);font-size:22px;line-height:1">&times;</button>
+    </div>
+    <div id="ai-sec" style="display:${addTabMode==='ai'?'block':'none'};margin-bottom:12px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="ai-si" placeholder="e.g. Agua Azul waterfalls day trip" value="${aiSV}"/>
+        <button class="btn btn-t btn-sm" id="ai-sb" onclick="doAISearch()" style="white-space:nowrap"><i class="ti ti-sparkles"></i> Research</button>
+      </div>
+      <div id="ai-rb" style="display:none;font-size:12px;color:#0E8A65;background:#E2F5EF;border-radius:6px;padding:7px 10px;margin-bottom:8px;align-items:center;gap:5px"><i class="ti ti-check"></i> AI filled in details below. Review and save.</div>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <div class="full fld"><label class="lbl">Activity name *</label><input id="na-nm" value="${newA.name}" placeholder="e.g. Sumidero Canyon kayak"/></div>
+      <div class="full fld"><label class="lbl">Location</label><input id="na-loc" value="${newA.location}" placeholder="Address or area"/></div>
+      <div class="fld"><label class="lbl">Time</label><input id="na-t" value="${newA.time}" placeholder="14:00"/></div>
+      <div class="fld"><label class="lbl">Category</label>
+        <select id="na-cat">
+          <option value="activity" ${newA.category==='activity'?'selected':''}>Activity</option>
+          <option value="food"     ${newA.category==='food'?'selected':''}>Food</option>
+          <option value="explore"  ${newA.category==='explore'?'selected':''}>Explore</option>
+          <option value="transport"${newA.category==='transport'?'selected':''}>Transport</option>
+          <option value="accommodation"${newA.category==='accommodation'?'selected':''}>Accommodation</option>
+        </select>
+      </div>
+      <div class="fld"><label class="lbl">Cost</label><input id="na-c" value="${newA.cost}" placeholder="$20/person"/></div>
+      <div class="fld"><label class="lbl">Duration</label><input id="na-d" value="${newA.duration}" placeholder="3h"/></div>
+      <div class="full fld"><label class="lbl">Notes</label><textarea id="na-n" rows="2" placeholder="Tips for the group...">${newA.notes}</textarea></div>
+    </div>
+    <button class="btn btn-f" style="width:100%;justify-content:center;border-radius:var(--rm);padding:12px" onclick="saveAct()"><i class="ti ti-check"></i> Add to ${d.date}</button>`;
+  setTimeout(()=>{
+    ['nm','loc','t','c','d','n'].forEach(f=>{const el=document.getElementById('na-'+f);if(el)el.addEventListener('input',syncForm)});
+    document.getElementById('na-cat')?.addEventListener('change',syncForm);
+    document.getElementById('ai-si')?.addEventListener('input',e=>{aiSV=e.target.value});
+  },0);
+  return div;
+}
+
+function swATab(t){
+  addTabMode=t;
+  document.querySelectorAll('.apt').forEach((b,i)=>{b.classList.toggle('active',(i===0&&t==='manual')||(i===1&&t==='ai'))});
+  const s=document.getElementById('ai-sec');if(s)s.style.display=t==='ai'?'block':'none';
+}
+
+function syncForm(){
+  newA.name    =document.getElementById('na-nm')?.value||'';
+  newA.location=document.getElementById('na-loc')?.value||'';
+  newA.time    =document.getElementById('na-t')?.value||'09:00';
+  newA.category=document.getElementById('na-cat')?.value||'activity';
+  newA.cost    =document.getElementById('na-c')?.value||'';
+  newA.duration=document.getElementById('na-d')?.value||'';
+  newA.notes   =document.getElementById('na-n')?.value||'';
+}
+
+async function doAISearch(){
+  aiSV=document.getElementById('ai-si')?.value||'';if(!aiSV.trim())return;
+  const btn=document.getElementById('ai-sb');
+  if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span>`;btn.disabled=true}
+  try{
+    const t=T();
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",max_tokens:800,
+      messages:[{role:"user",content:`Trip: ${t?.name} (${t?.dates}). Group: couple plus her Mexican parents (active 60s). Research this activity: "${aiSV}". Return ONLY valid JSON (no markdown): {name,location,category,notes,cost,duration,time}. category must be one of: transport,accommodation,food,activity,explore. cost as "$X/person". time as "HH:MM". notes should be 2 to 3 helpful sentences.`}]
+    })});
+    const data=await res.json();
+    const txt=data.content?.find(b=>b.type==='text')?.text||'';
+    const p=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    Object.assign(newA,p);
+    const map={nm:'name',loc:'location',t:'time',c:'cost',d:'duration',n:'notes'};
+    Object.entries(map).forEach(([f,k])=>{const el=document.getElementById('na-'+f);if(el)el.value=newA[k]||''});
+    const cat=document.getElementById('na-cat');if(cat&&newA.category)cat.value=newA.category;
+    const rb=document.getElementById('ai-rb');if(rb)rb.style.display='flex';
+  }catch(e){console.error(e);toast('AI research failed. Try again.')}
+  if(btn){btn.innerHTML=`<i class="ti ti-sparkles"></i> Research`;btn.disabled=false}
+}
+
+function saveAct(){
+  syncForm();if(!newA.name.trim()){toast('Enter an activity name');return}
+  const a={...newA,id:'u'+Date.now()};
+  trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,days:t.days.map(d=>{
+    if(d.id!==did)return d;
+    return{...d,activities:[...d.activities,a].sort((x,y)=>x.time.localeCompare(y.time))};
+  })}});
+  save();addOpen=false;newA=ba();aiSV='';renderActs();renderDays();toast('Activity added');
+}
+
+/* ═══════════ FLIGHTS ═══════════ */
+function renderFlights(){
+  const t=T();const body=document.getElementById('flights-body');body.innerHTML='';
+
+  // Departure location + buffer (shared settings)
+  const settingsCard=document.createElement('div');
+  settingsCard.style.cssText='background:var(--card);border:1px solid var(--bd-m);border-radius:var(--rl);padding:16px 18px;margin-bottom:20px';
+  settingsCard.innerHTML=`
+    <div style="font-size:11px;font-weight:600;color:var(--ink-s);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-home" style="font-size:14px"></i> Departure logistics</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="grid-column:1/-1;display:flex;flex-direction:column">
+        <label class="lbl">Departure address (home or hotel)</label>
+        <input value="${t.departureLocation||''}" placeholder="e.g. 123 Main St, New York, NY" onchange="upTrip('departureLocation',this.value)"/>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <label class="lbl">Buffer time at airport</label>
+        <select onchange="upTrip('bufferMinutes',parseInt(this.value))">
+          ${[30,45,60,90,120,150,180].map(m=>`<option value="${m}" ${(t.bufferMinutes||90)===m?'selected':''}>${m} min (${m>=60?Math.floor(m/60)+'h'+(m%60?m%60+'m':''):''})</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <div style="font-size:12px;color:var(--ink-s);background:var(--cream-d);border-radius:var(--rs);padding:10px 12px">
+          <i class="ti ti-info-circle" style="font-size:13px"></i> Buffer = time you want to be past security, not total travel time
+        </div>
+      </div>
+    </div>`;
+  body.appendChild(settingsCard);
+
+  [{key:'out',label:'Outbound flight',icon:'ti-plane'},{key:'ret',label:'Return flight',icon:'ti-plane-arrival'}].forEach(({key,label,icon})=>{
+    const f=t.flights[key];
+    if(f.confirmed){
+      body.appendChild(buildMissionCard(key,f,t));
+    } else {
+      body.appendChild(buildFlightInputCard(key,label,icon,f,t));
+    }
+  });
+}
+
+function upTrip(field,val){
+  trips=trips.map(t=>t.id!==tid?t:{...t,[field]:val});
+  save();
+}
+
+function buildFlightInputCard(key,label,icon,f,t){
+  const otp=parseInt(f.otp)||0;
+  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
+  const seg=document.createElement('div');seg.className='fl-seg';
+  seg.innerHTML=`
+    <div class="fl-seg-hdr">
+      <span class="fl-seg-title"><i class="ti ${icon}"></i> ${label}</span>
+      ${f.fno?`<span style="font-size:12px;opacity:.7">${f.airline} ${f.fno}</span>`:''}
+    </div>
+    <div class="fl-seg-body">
+      <!-- AUTOFILL BAR -->
+      <div style="background:linear-gradient(135deg,rgba(26,74,110,.08),rgba(42,106,158,.08));border:1px solid rgba(26,74,110,.2);border-radius:var(--rl);padding:16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--sky);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-bolt" style="font-size:15px"></i> Auto-fill from flight number</div>
+        <div style="font-size:12px;color:var(--ink-s);margin-bottom:12px">Enter your flight number and date to look up all the details automatically.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="af-fno-${key}" value="${f.fno}" placeholder="Flight # — e.g. AM 123" style="flex:1;min-width:120px"/>
+          <input id="af-date-${key}" value="${f.ddep}" placeholder="Date — e.g. May 22, 2026" style="flex:1;min-width:120px"/>
+          <button class="btn-sky btn btn-sm" id="af-btn-${key}" onclick="autoFill('${key}')" style="flex-shrink:0"><i class="ti ti-search"></i> Look up</button>
+        </div>
+        <div id="af-status-${key}" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:var(--rs)"></div>
+      </div>
+      <!-- MANUAL FIELDS -->
+      <div class="fl-grid">
+        <div class="fld"><label class="lbl">Airline</label><input id="fi-airline-${key}" value="${f.airline}" placeholder="e.g. Aeromexico" onchange="upFlight('${key}','airline',this.value)"/></div>
+        <div class="fld"><label class="lbl">Flight number</label><input id="fi-fno-${key}" value="${f.fno}" placeholder="e.g. AM 123" onchange="upFlight('${key}','fno',this.value)"/></div>
+        <div class="fld"><label class="lbl">From</label><input id="fi-from-${key}" value="${f.fromFull||f.from}" placeholder="City (IATA)" onchange="upFlight('${key}','fromFull',this.value)"/></div>
+        <div class="fld"><label class="lbl">To</label><input id="fi-to-${key}" value="${f.toFull||f.to}" placeholder="City (IATA)" onchange="upFlight('${key}','toFull',this.value)"/></div>
+        <div class="fld"><label class="lbl">Departure date</label><input id="fi-ddep-${key}" value="${f.ddep}" placeholder="May 22, 2026" onchange="upFlight('${key}','ddep',this.value)"/></div>
+        <div class="fld"><label class="lbl">Departure time</label><input type="time" id="fi-tdep-${key}" value="${f.tdep}" onchange="upFlight('${key}','tdep',this.value)"/></div>
+        <div class="fld"><label class="lbl">Arrival date</label><input id="fi-darr-${key}" value="${f.darr}" placeholder="May 22, 2026" onchange="upFlight('${key}','darr',this.value)"/></div>
+        <div class="fld"><label class="lbl">Arrival time</label><input type="time" id="fi-tarr-${key}" value="${f.tarr}" onchange="upFlight('${key}','tarr',this.value)"/></div>
+        <div class="fld"><label class="lbl">Departure terminal</label><input id="fi-depT-${key}" value="${f.depTerminal}" placeholder="e.g. Terminal 1" onchange="upFlight('${key}','depTerminal',this.value)"/></div>
+        <div class="fld"><label class="lbl">Arrival terminal</label><input id="fi-arrT-${key}" value="${f.arrTerminal}" placeholder="e.g. Terminal 2" onchange="upFlight('${key}','arrTerminal',this.value)"/></div>
+        <div class="fld"><label class="lbl">Flight duration</label><input id="fi-dur-${key}" value="${f.dur}" placeholder="e.g. 2h 30 min" onchange="upFlight('${key}','dur',this.value)"/></div>
+        <div class="fld"><label class="lbl">Confirmation #</label><input id="fi-conf-${key}" value="${f.conf}" placeholder="e.g. AB1234" onchange="upFlight('${key}','conf',this.value)"/></div>
+        <div class="full fld">
+          <label class="lbl">On-time performance: <strong id="otp-lbl-${key}">${otp?otp+'%':'drag to set'}</strong></label>
+          <div class="otp-wrap" style="gap:12px">
+            <input type="range" min="0" max="100" value="${otp}" style="flex:1" id="otp-sl-${key}" oninput="liveOTP('${key}',this.value)" onchange="upFlight('${key}','otp',this.value)"/>
+            <div class="otp-track" style="width:90px;flex-shrink:0"><div class="otp-fill" id="otp-fill-${key}" style="width:${otp}%;background:${otpCol}"></div></div>
+            <span id="otp-v-${key}" style="font-size:13px;color:${otpCol};font-weight:600;width:36px;flex-shrink:0">${otp?otp+'%':''}</span>
+          </div>
+        </div>
+        <div class="full fld"><label class="lbl">Notes (baggage, seats, connections)</label><textarea id="fi-notes-${key}" rows="2" onchange="upFlight('${key}','notes',this.value)">${f.notes}</textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn btn-f" style="flex:1;justify-content:center" onclick="confirmFlight('${key}')"><i class="ti ti-check"></i> Looks good — confirm flight</button>
+      </div>
+    </div>`;
+  return seg;
+}
+
+function liveOTP(key,val){
+  const v=parseInt(val)||0;
+  const col=v>=85?'#0E8A65':v>=65?'#9A6010':'#BE5A2A';
+  const fill=document.getElementById('otp-fill-'+key);
+  const lbl=document.getElementById('otp-lbl-'+key);
+  const valEl=document.getElementById('otp-v-'+key);
+  if(fill){fill.style.width=v+'%';fill.style.background=col}
+  if(lbl)lbl.textContent=v?v+'%':'drag to set';
+  if(valEl){valEl.textContent=v?v+'%':'';valEl.style.color=col}
+}
+
+async function autoFill(key){
+  const fno=(document.getElementById('af-fno-'+key)?.value||'').trim();
+  const date=(document.getElementById('af-date-'+key)?.value||'').trim();
+  if(!fno){toast('Enter a flight number');return}
+  const btn=document.getElementById('af-btn-'+key);
+  const status=document.getElementById('af-status-'+key);
+  if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span> Looking up...`;btn.disabled=true}
+  if(status){status.style.display='block';status.style.background='rgba(26,74,110,.08)';status.style.color='var(--sky)';status.textContent=`Searching for flight ${fno}${date?' on '+date:''}...`}
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        messages:[{role:"user",content:`Search for flight ${fno}${date?' on '+date:''} and find: airline name, origin city and airport (full name + IATA code), destination city and airport (full name + IATA code), scheduled departure time (24h), scheduled arrival time (24h), flight duration, departure terminal, arrival terminal, and on-time performance percentage for this route. Search flight tracking sites and airline schedules.\n\nReturn ONLY valid JSON (absolutely no markdown, no explanation):\n{"airline":"full airline name","fno":"flight number","fromFull":"City Name Airport (IATA)","toFull":"City Name Airport (IATA)","from":"IATA","to":"IATA","ddep":"${date||'the flight date'}","tdep":"HH:MM","darr":"date","tarr":"HH:MM","dur":"Xh Ymin","depTerminal":"Terminal X or empty","arrTerminal":"Terminal X or empty","otp":82,"notes":"useful route notes"}`}]
+      })
+    });
+    const data=await res.json();
+    const txt=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('no json');
+    const p=JSON.parse(match[0]);
+
+    // Show confirmation card
+    showFlightConfirm(key,p);
+    if(status){
+      status.style.background='rgba(14,138,101,.1)';status.style.color='#0E8A65';
+      status.innerHTML=`<i class="ti ti-check"></i> Found! Review the details below.`;
+    }
+  }catch(e){
+    console.error(e);
+    if(status){status.style.background='rgba(190,90,42,.1)';status.style.color='var(--terra)';status.innerHTML=`<i class="ti ti-alert-circle"></i> Could not auto-fill. Try "AM 123" format or fill manually below.`}
+  }
+  if(btn){btn.innerHTML=`<i class="ti ti-search"></i> Look up`;btn.disabled=false}
+}
+
+function showFlightConfirm(key,p){
+  // Remove any existing confirm card for this key
+  document.getElementById('confirm-'+key)?.remove();
+  const otp=parseInt(p.otp)||0;
+  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
+  const otpLabel=otp>=85?'Usually on time':otp>=65?'Sometimes delayed':'Often delayed';
+
+  const card=document.createElement('div');
+  card.className='confirm-card';card.id='confirm-'+key;
+  card.innerHTML=`
+    <div class="confirm-card-hdr">
+      <div class="confirm-card-icon"><i class="ti ti-plane" style="color:var(--sky);font-size:18px"></i></div>
+      <div>
+        <div class="confirm-card-title">Does this look right?</div>
+        <div class="confirm-card-sub">${p.airline||''} ${p.fno||''} · ${p.ddep||''}</div>
+      </div>
+    </div>
+    <div class="confirm-grid">
+      <div class="cg-item"><div class="cg-lbl">From</div><div class="cg-val">${p.fromFull||p.from||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">To</div><div class="cg-val">${p.toFull||p.to||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Departs</div><div class="cg-val">${p.tdep||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Arrives</div><div class="cg-val">${p.tarr||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Duration</div><div class="cg-val">${p.dur||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">On-time</div><div class="cg-val"><span class="otp-badge" style="background:${otpCol}20;color:${otpCol}">${otp?otp+'%':'-'} ${otpLabel}</span></div></div>
+      ${p.depTerminal?`<div class="cg-item"><div class="cg-lbl">Dep terminal</div><div class="cg-val">${p.depTerminal}</div></div>`:''}
+      ${p.arrTerminal?`<div class="cg-item"><div class="cg-lbl">Arr terminal</div><div class="cg-val">${p.arrTerminal}</div></div>`:''}
+    </div>
+    ${p.notes?`<div style="font-size:12px;color:var(--ink-m);background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px">${p.notes}</div>`:''}
+    <div class="confirm-actions">
+      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="acceptFlightData('${key}',${JSON.stringify(p).replace(/'/g,"&#39;").replace(/"/g,'&quot;')})"><i class="ti ti-check"></i> Yes, that's correct</button>
+      <button class="btn btn-g" onclick="document.getElementById('confirm-${key}').remove()"><i class="ti ti-x"></i> Dismiss</button>
+    </div>`;
+  // Insert above the fl-seg-body's form
+  const afBar=document.getElementById('af-status-'+key)?.closest('div[style*="border-radius:var(--rl)"]');
+  afBar?.after(card);
+}
+
+function acceptFlightData(key,p){
+  // p comes as an object parsed from the JSON attr — but since we're using onclick, re-parse from a stored temp
+  // Instead call a helper that reads from a data attr
+  const card=document.getElementById('confirm-'+key);
+  // We need to get p from the card dataset
+  applyFlightData(key,p);
+  card?.remove();
+  toast('Flight saved!');
+  renderFlights();
+}
+
+// Called via onclick with JSON string escaped
+window._pendingFlight={};
+function acceptFlightDataStr(key){
+  const p=window._pendingFlight[key];
+  if(!p)return;
+  applyFlightData(key,p);
+  document.getElementById('confirm-'+key)?.remove();
+  toast('Flight saved!');renderFlights();
+}
+
+function applyFlightData(key,p){
+  trips=trips.map(t=>{
+    if(t.id!==tid)return t;
+    const existing=t.flights[key];
+    return{...t,flights:{...t.flights,[key]:{
+      ...existing,
+      airline:p.airline||existing.airline,
+      fno:p.fno||existing.fno,
+      from:p.from||existing.from,
+      to:p.to||existing.to,
+      fromFull:p.fromFull||existing.fromFull,
+      toFull:p.toFull||existing.toFull,
+      ddep:p.ddep||existing.ddep,
+      tdep:p.tdep||existing.tdep,
+      darr:p.darr||existing.darr,
+      tarr:p.tarr||existing.tarr,
+      dur:p.dur||existing.dur,
+      otp:p.otp||existing.otp,
+      depTerminal:p.depTerminal||existing.depTerminal,
+      arrTerminal:p.arrTerminal||existing.arrTerminal,
+      notes:p.notes||existing.notes,
+    }}};
+  });
+  save();
+}
+
+function confirmFlight(key){
+  const t=T();const f=t.flights[key];
+  if(!f.fno&&!f.airline){toast('Add at least an airline or flight number first');return}
+  trips=trips.map(t=>t.id!==tid?t:{...t,flights:{...t.flights,[key]:{...t.flights[key],confirmed:true}}});
+  save();toast('Flight confirmed!');renderFlights();renderHomeFlights();
+}
+
+function unconfirmFlight(key){
+  trips=trips.map(t=>t.id!==tid?t:{...t,flights:{...t.flights,[key]:{...t.flights[key],confirmed:false}}});
+  save();renderFlights();
+}
+
+function upFlight(key,field,val){
+  trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,flights:{...t.flights,[key]:{...t.flights[key],[field]:val}}}});
+  save();
+}
+
+// Mission control card (confirmed flight)
+function buildMissionCard(key,f,t){
+  const otp=parseInt(f.otp)||0;
+  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
+  const fromIATA=f.from||f.fromFull?.match(/\(([A-Z]+)\)/)?.[1]||'???';
+  const toIATA=f.to||f.toFull?.match(/\(([A-Z]+)\)/)?.[1]||'???';
+  const fromCity=(f.fromFull||f.from||'').split('(')[0].trim()||fromIATA;
+  const toCity=(f.toFull||f.to||'').split('(')[0].trim()||toIATA;
+
+  // Calculate leave-by time
+  let leaveByStr='', leaveByDetail='';
+  if(f.tdep){
+    const [hh,mm]=f.tdep.split(':').map(Number);
+    const depMins=hh*60+mm;
+    const buffer=parseInt(t.bufferMinutes)||90;
+    const totalBackMin=buffer; // buffer AFTER arriving = desired buffer at airport
+    const leaveMin=depMins-totalBackMin;
+    const lh=Math.floor(((leaveMin%1440)+1440)%1440/60);
+    const lm=((leaveMin%1440)+1440)%1440%60;
+    leaveByStr=`${lh.toString().padStart(2,'0')}:${lm.toString().padStart(2,'0')}`;
+    leaveByDetail=`${buffer} min buffer at airport`;
+  }
+
+  const dest=encodeURIComponent(f.toFull||f.to||'airport');
+  const origin=t.departureLocation?encodeURIComponent(t.departureLocation):'';
+  const mapsBase=`https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=`;
+
+  const wrap=document.createElement('div');wrap.className='mc-card';
+  wrap.innerHTML=`
+    <div class="mc-card-hero">
+      <div class="mc-route">
+        <div class="mc-airport"><div class="mc-iata">${fromIATA}</div><div class="mc-city">${fromCity}</div></div>
+        <div class="mc-flight-line">
+          <div class="mc-flight-no">${f.fno}</div>
+          <div class="mc-line"><div class="mc-line-track"></div><i class="ti ti-plane" style="font-size:16px;flex-shrink:0"></i></div>
+          <div style="font-size:11px;opacity:.5">${f.dur||''}</div>
+        </div>
+        <div class="mc-airport"><div class="mc-iata">${toIATA}</div><div class="mc-city">${toCity}</div></div>
+      </div>
+      <div class="mc-times">
+        <div class="mc-time-block">
+          <div class="mc-time">${f.tdep||'TBD'}</div>
+          <div class="mc-time-lbl">Departs ${f.ddep||''}</div>
+        </div>
+        <div class="mc-time-block" style="text-align:right">
+          <div class="mc-time">${f.tarr||'TBD'}</div>
+          <div class="mc-time-lbl">Arrives ${f.darr||''}</div>
+        </div>
+      </div>
+      <div class="mc-airline-row">
+        <i class="ti ti-plane-departure" style="font-size:14px;opacity:.5"></i>
+        <span class="mc-airline-lbl">${f.airline}</span>
+        ${otp?`<span style="margin-left:auto"><span class="otp-badge" style="background:${otpCol}25;color:${otpCol};font-size:11px">${otp}% on time</span></span>`:''}
+      </div>
+    </div>
+    <div class="mc-card-body">
+      <div class="mc-terminals">
+        <div class="mc-terminal"><div class="mc-terminal-lbl">Dep terminal</div><div class="mc-terminal-val">${f.depTerminal||'Not set'}</div></div>
+        <div class="mc-terminal"><div class="mc-terminal-lbl">Arr terminal</div><div class="mc-terminal-val">${f.arrTerminal||'Not set'}</div></div>
+      </div>
+      <div class="mc-stats">
+        <div class="mc-stat"><div class="mc-stat-lbl">Confirmation</div><div class="mc-stat-val" style="font-size:13px">${f.conf||'Not added'}</div></div>
+        <div class="mc-stat"><div class="mc-stat-lbl">Duration</div><div class="mc-stat-val">${f.dur||'?'}</div></div>
+        <div class="mc-stat"><div class="mc-stat-lbl">On-time</div><div class="mc-stat-val" style="color:${otpCol}">${otp?otp+'%':'?'}</div></div>
+      </div>
+      ${leaveByStr?`
+      <div class="mc-countdown">
+        <div class="mc-countdown-left">
+          <div class="mc-countdown-label">Leave by</div>
+          <div class="mc-countdown-time">${leaveByStr}</div>
+          <div class="mc-countdown-sub">${leaveByDetail} · ${t.bufferMinutes} min buffer after arrival</div>
+        </div>
+        <div class="mc-leave-by">
+          <div class="mc-leave-lbl">Departs</div>
+          <div class="mc-leave-time">${f.tdep}</div>
+          <div class="mc-leave-detail">${f.ddep}</div>
+        </div>
+      </div>`:''}
+      ${t.departureLocation?`
+      <div class="mc-directions">
+        <div class="mc-dir-title"><i class="ti ti-navigation" style="font-size:13px"></i> Directions to airport</div>
+        <div style="font-size:12px;color:var(--ink-s);margin-bottom:10px">From: ${t.departureLocation}</div>
+        <div class="mc-dir-btns">
+          <a href="${mapsBase}driving${origin?'&origin='+origin:''}" target="_blank" class="mc-dir-btn"><i class="ti ti-car"></i> Drive</a>
+          <a href="${mapsBase}transit${origin?'&origin='+origin:''}" target="_blank" class="mc-dir-btn"><i class="ti ti-bus"></i> Transit</a>
+          <a href="${mapsBase}walking${origin?'&origin='+origin:''}" target="_blank" class="mc-dir-btn"><i class="ti ti-walk"></i> Walk</a>
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.toFull||f.to||'airport')}" target="_blank" class="mc-dir-btn"><i class="ti ti-map-2"></i> Map</a>
+        </div>
+      </div>`:'<div style="padding:14px 16px;font-size:13px;color:var(--ink-s)"><i class="ti ti-info-circle"></i> Add your departure address above to get directions</div>'}
+      ${f.notes?`<div style="padding:0 16px 14px;font-size:13px;color:var(--ink-m);line-height:1.6">${f.notes}</div>`:''}
+      <div class="mc-edit-link">
+        <button class="btn btn-g btn-sm" onclick="unconfirmFlight('${key}')"><i class="ti ti-pencil"></i> Edit flight</button>
+      </div>
+    </div>`;
+  return wrap;
+}
+
+/* ═══════════ HOTELS ═══════════ */
+function renderHotels(){
+  const t=T();const body=document.getElementById('hotels-body');body.innerHTML='';
+  t.hotels.forEach(h=>{
+    const ci=new Date(h.cin),co=new Date(h.cout);
+    const nights=!isNaN(ci)&&!isNaN(co)?Math.round((co-ci)/86400000):null;
+    const total=nights&&h.ppn?`$${(nights*parseFloat(h.ppn)).toFixed(0)} total`:'';
+    const card=document.createElement('div');card.className='hotel-card';
+    card.innerHTML=`
+      <div class="hotel-hdr">
+        <div><div class="hotel-name">${h.name||'Unnamed hotel'}</div><div class="hotel-dates">${h.cin} to ${h.cout}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${nights?`<span class="nights-badge"><i class="ti ti-moon" style="font-size:12px"></i>${nights}n</span>`:''}
+          <button onclick="delHotel('${h.id}')" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:5px 10px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer;font-family:var(--ffb)"><i class="ti ti-trash" style="font-size:12px"></i></button>
+        </div>
+      </div>
+      <div class="hotel-body">
+        <div class="hotel-grid">
+          <div class="fld"><label class="lbl">Hotel name</label><input value="${h.name}" placeholder="Hotel name" onchange="upHotel('${h.id}','name',this.value)"/></div>
+          <div class="fld"><label class="lbl">Confirmation #</label><input value="${h.conf}" placeholder="e.g. XY123456" onchange="upHotel('${h.id}','conf',this.value)"/></div>
+          <div class="fld"><label class="lbl">Check-in date</label><input value="${h.cin}" placeholder="May 22, 2026" onchange="upHotel('${h.id}','cin',this.value);renderHotels()"/></div>
+          <div class="fld"><label class="lbl">Check-in time</label><input type="time" value="${h.cit}" onchange="upHotel('${h.id}','cit',this.value)"/></div>
+          <div class="fld"><label class="lbl">Check-out date</label><input value="${h.cout}" placeholder="May 23, 2026" onchange="upHotel('${h.id}','cout',this.value);renderHotels()"/></div>
+          <div class="fld"><label class="lbl">Price per night ($)</label><input type="number" value="${h.ppn}" placeholder="50" onchange="upHotel('${h.id}','ppn',this.value);renderHotels()"/></div>
+          <div class="full fld"><label class="lbl">Address</label><input value="${h.addr}" placeholder="Full address" onchange="upHotel('${h.id}','addr',this.value)"/></div>
+          ${total?`<div class="full"><div class="cost-summary"><i class="ti ti-coin" style="font-size:13px"></i> Estimated: <strong>${total}</strong> (${nights} nights x $${h.ppn}/night)</div></div>`:''}
+          <div class="full fld"><label class="lbl">Notes</label><textarea rows="2" placeholder="Amenities, parking, requests..." onchange="upHotel('${h.id}','notes',this.value)">${h.notes}</textarea></div>
+          ${h.addr?`<div class="full"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.addr)}" target="_blank" class="btn btn-g btn-sm" style="display:inline-flex"><i class="ti ti-map-2"></i> View on map</a></div>`:''}
+        </div>
+      </div>`;
+    body.appendChild(card);
+  });
+  const add=document.createElement('button');add.className='add-hotel-btn';
+  add.innerHTML=`<i class="ti ti-plus"></i> Add hotel stay`;add.onclick=addHotel;
+  body.appendChild(add);
+}
+function upHotel(id,f,v){trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,hotels:t.hotels.map(h=>h.id===id?{...h,[f]:v}:h)}});save()}
+function delHotel(id){trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,hotels:t.hotels.filter(h=>h.id!==id)}});save();renderHotels()}
+function addHotel(){trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,hotels:[...t.hotels,{id:'h'+Date.now(),name:'',cin:'',cout:'',cit:'',addr:'',conf:'',ppn:'',notes:''}]}});save();renderHotels()}
+
+/* ═══════════ TODOS ═══════════ */
+function renderTodos(){
+  const t=T();const body=document.getElementById('todos-body');body.innerHTML='';
+  [{key:'pretrip',label:'Pre-trip tasks',icon:'ti-checklist'},{key:'packing',label:'Packing list',icon:'ti-backpack'}].forEach(sec=>{
+    const items=t.todos[sec.key];const done=items.filter(i=>i.done).length;
+    const wrap=document.createElement('div');wrap.className='todo-sec';
+    wrap.innerHTML=`<div class="todo-sec-hdr"><span class="todo-sec-ttl"><i class="ti ${sec.icon}"></i>${sec.label}</span><span class="todo-cnt">${done}/${items.length}</span></div>`;
+    items.forEach(item=>{
+      const row=document.createElement('div');row.className='todo-item'+(item.done?' done':'');
+      row.innerHTML=`<div class="tcb ${item.done?'on':''}"></div><span class="todo-txt">${item.text}</span><button class="todo-del" onclick="event.stopPropagation();delTodo('${sec.key}','${item.id}')">&times;</button>`;
+      row.addEventListener('click',()=>togTodo(sec.key,item.id));
+      wrap.appendChild(row);
+    });
+    const ar=document.createElement('div');ar.className='todo-add-row';
+    ar.innerHTML=`<input id="ta-${sec.key}" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTodo('${sec.key}')"/>
+      <button class="btn btn-f btn-sm" onclick="addTodo('${sec.key}')"><i class="ti ti-plus"></i></button>`;
+    wrap.appendChild(ar);body.appendChild(wrap);
+  });
+}
+function togTodo(s,id){trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,todos:{...t.todos,[s]:t.todos[s].map(i=>i.id===id?{...i,done:!i.done}:i)}}}); save();renderTodos();renderHome()}
+function delTodo(s,id){trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,todos:{...t.todos,[s]:t.todos[s].filter(i=>i.id!==id)}}}); save();renderTodos()}
+function addTodo(s){const inp=document.getElementById('ta-'+s);const txt=inp?.value?.trim();if(!txt)return;trips=trips.map(t=>{if(t.id!==tid)return t;return{...t,todos:{...t.todos,[s]:[...t.todos[s],{id:'td'+Date.now(),text:txt,done:false}]}}}); save();renderTodos()}
+
+/* ═══════════ ACTIVITY DETAIL ═══════════ */
+function renderActDetail(a,t,prev){
+  aiQ2='';aiA2='';
+  const cat=CAT[a.category]||CAT.activity;
+  const hero=document.getElementById('act-hero');
+  hero.style.background=`linear-gradient(148deg,${cat.hbg} 0%,${cat.hbg}CC 100%)`;
+  hero.style.color=cat.htxt;
+  document.getElementById('act-icon').innerHTML=`<i class="ti ${cat.icon}" style="color:${cat.dot};font-size:24px"></i>`;
+  document.getElementById('act-name').textContent=a.name;
+  document.getElementById('act-sub').innerHTML=`<span>${a.time||'No time'}</span><span style="opacity:.5;margin:0 2px">·</span><span style="text-transform:capitalize;font-weight:500">${a.category}</span>${a.duration?`<span style="opacity:.5;margin:0 2px">·</span><span>${a.duration}</span>`:''}`;
+  const dest=encodeURIComponent(a.location||a.name+', Chiapas');
+  const orig=prev?encodeURIComponent(prev.location):'';
+  const mb=`https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=`;
+  const stats=[a.time?{l:'Time',v:a.time,i:'ti-clock'}:null,a.duration?{l:'Duration',v:a.duration,i:'ti-hourglass'}:null,a.cost?{l:'Cost',v:a.cost,i:'ti-coin'}:null].filter(Boolean);
+  document.getElementById('act-body').innerHTML=`
+    ${stats.length?`<div class="stat-row" style="margin-top:18px">${stats.map(s=>`<div class="stat-box"><div class="stat-lbl"><i class="ti ${s.i}"></i> ${s.l}</div><div class="stat-val">${s.v}</div></div>`).join('')}</div>`:'<div style="height:18px"></div>'}
+    ${a.location?`<p class="sec-ttl">Location</p><div class="loc-block"><div class="loc-icon"><i class="ti ti-map-pin" style="color:var(--terra);font-size:16px"></i></div><div style="font-size:13px;color:var(--ink-m);line-height:1.5">${a.location}</div></div>`:''}
+    ${a.notes?`<p class="sec-ttl">Notes and tips</p><div class="notes-block"><p>${a.notes}</p></div>`:''}
+    <p class="sec-ttl">Directions</p>
+    <div class="dir-row">
+      <a href="${mb}driving${orig?'&origin='+orig:''}" target="_blank" class="dir-btn"><i class="ti ti-car"></i> Drive</a>
+      <a href="${mb}walking${orig?'&origin='+orig:''}" target="_blank" class="dir-btn"><i class="ti ti-walk"></i> Walk</a>
+      <a href="${mb}transit${orig?'&origin='+orig:''}" target="_blank" class="dir-btn"><i class="ti ti-bus"></i> Transit</a>
+      <a href="https://www.google.com/maps/search/?api=1&query=${dest}" target="_blank" class="dir-btn"><i class="ti ti-map-2"></i> Map</a>
+    </div>
+    ${prev?`<p class="dir-from" style="font-size:11px;color:var(--ink-s);margin-bottom:18px;display:flex;align-items:center;gap:4px"><i class="ti ti-corner-down-right" style="font-size:11px"></i> From: ${prev.name}</p>`:'<div style="height:16px"></div>'}
+    <div class="ai-panel">
+      <div class="ai-phdr"><i class="ti ti-sparkles" style="font-size:16px"></i><span style="font-size:13px;font-weight:500">Ask about this activity</span></div>
+      <div class="ai-pbody">
+        <div class="ai-irow"><input id="aiq" placeholder="Hours, what to bring, nearby food..." onkeydown="if(event.key==='Enter')askAI()"/><button class="ai-abtn" id="aib" onclick="askAI()"><i class="ti ti-send"></i> Ask</button></div>
+        <div class="qq-row">${["What time does it open?","What should we bring?","Nearby lunch spots","Good for older adults?"].map(q=>`<button class="qq" onclick="setQ('${q.replace(/'/g,"&#39;")}')">${q}</button>`).join('')}</div>
+        <div id="aia"></div>
+      </div>
+    </div>`;
+}
+function setQ(q){aiQ2=q;const inp=document.getElementById('aiq');if(inp)inp.value=q}
+async function askAI(){
+  const inp=document.getElementById('aiq');aiQ2=inp?.value||aiQ2;
+  if(!aiQ2.trim()||!curAct)return;
+  const aia=document.getElementById('aia');
+  aia.innerHTML=`<div class="thinking"><div class="d"></div><div class="d"></div><div class="d"></div><span style="margin-left:6px;font-size:13px;color:var(--ink-s)">Researching...</span></div>`;
+  const btn=document.getElementById('aib');if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span>`;btn.disabled=true}
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",max_tokens:500,
+      messages:[{role:"user",content:`Activity: "${curAct.name}" at ${curAct.location}, Chiapas, Mexico, late May 2026. Group: couple plus her Mexican parents (active 60s). Question: ${aiQ2}. Answer in 2 to 4 sentences, practical and warm.`}]
+    })});
+    const data=await res.json();
+    aiA2=data.content?.find(b=>b.type==='text')?.text||'Something went wrong.';
+    aia.innerHTML=`<div class="ai-ans">${aiA2}</div>`;
+  }catch(e){aia.innerHTML=`<div class="ai-ans">Something went wrong. Try again.</div>`}
+  if(btn){btn.innerHTML=`<i class="ti ti-send"></i> Ask`;btn.disabled=false}
+}
+
+/* ═══════════ TRIP MODAL ═══════════ */
+function renderEP(){
+  const ep=document.getElementById('ep');ep.innerHTML='';
+  EMOJIS.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='eo'+(e===mEmoji?' sel':'');b.textContent=e;b.onclick=()=>{mEmoji=e;renderEP()};ep.appendChild(b)});
+}
+function renderMC(){
+  const c=document.getElementById('mchips');c.innerHTML='';
+  mMembers.forEach((m,i)=>{const ch=document.createElement('div');ch.className='mchip';ch.innerHTML=`${m}<button onclick="delM(${i})">&times;</button>`;c.appendChild(ch)});
+}
+function addMember(){const inp=document.getElementById('m-inp');const v=inp?.value?.trim();if(!v)return;mMembers.push(v);inp.value='';renderMC()}
+function delM(i){mMembers.splice(i,1);renderMC()}
+function openNewTrip(){editTid=null;mEmoji='🌿';mMembers=[];document.getElementById('mo-trip-title').textContent='New trip';document.getElementById('mt-name').value='';document.getElementById('mt-start').value='';document.getElementById('mt-end').value='';document.getElementById('mo-del').style.display='none';renderEP();renderMC();openM('mo-trip')}
+function openEditTrip(id){
+  const rid=id||tid;if(!rid)return;
+  const t=trips.find(x=>x.id===rid);if(!t)return;
+  editTid=rid;mEmoji=t.emoji||'🌿';mMembers=[...t.people];
+  document.getElementById('mo-trip-title').textContent='Edit trip';
+  document.getElementById('mt-name').value=t.name;
+  const pts=t.dates.split(' to ');
+  document.getElementById('mt-start').value=pts[0]||'';
+  document.getElementById('mt-end').value=pts[1]||'';
+  document.getElementById('mo-del').style.display='flex';
+  renderEP();renderMC();openM('mo-trip');
+}
+function saveTrip(){
+  const name=document.getElementById('mt-name').value.trim();
+  const start=document.getElementById('mt-start').value.trim();
+  const end=document.getElementById('mt-end').value.trim();
+  if(!name){toast('Enter a trip name');return}
+  const dates=start&&end?`${start} to ${end}`:start||end||'Dates TBD';
+  if(editTid){
+    trips=trips.map(t=>t.id!==editTid?t:{...t,name,emoji:mEmoji,dates,people:mMembers});
+    if(tid===editTid)renderBanner();
+    renderHome();
+  } else {
+    trips.push({id:'trip-'+Date.now(),name,emoji:mEmoji,dates,cover:'tc-chiapas',people:mMembers,
+      flights:{out:{airline:'',fno:'',from:'',to:'',fromFull:'',toFull:'',ddep:start,tdep:'',darr:start,tarr:'',dur:'',otp:0,depTerminal:'',arrTerminal:'',conf:'',notes:'',confirmed:false},ret:{airline:'',fno:'',from:'',to:'',fromFull:'',toFull:'',ddep:end,tdep:'',darr:end,tarr:'',dur:'',otp:0,depTerminal:'',arrTerminal:'',conf:'',notes:'',confirmed:false}},
+      departureLocation:'',bufferMinutes:90,hotels:[],
+      days:[{id:'d1',date:start||'Day 1',label:'Day 1',activities:[]}],
+      todos:{pretrip:[{id:'pt1',text:'Book flights',done:false},{id:'pt2',text:'Book accommodation',done:false}],packing:[{id:'pk1',text:'Pack essentials',done:false}]}});
+    renderHome();
+  }
+  save();closeM('mo-trip');toast('Trip saved');
+}
+function deleteTrip(){if(!editTid)return;if(!confirm('Delete this trip?'))return;trips=trips.filter(t=>t.id!==editTid);save();closeM('mo-trip');if(tid===editTid){tid=null;goHome()}else renderHome();toast('Trip deleted')}
+
+/* ═══════════ UTILS ═══════════ */
+function openM(id){document.getElementById(id).classList.add('open')}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+function bgClose(e,id){if(e.target===document.getElementById(id))closeM(id)}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2400)}
+
+/* Intercept acceptFlightData to handle JSON passed through onclick */
+// Use a simpler approach: store pending data in a map and reference by key
+const _pf={};
+// Override showFlightConfirm to store pending data
+const _origShowFC=showFlightConfirm;
+window.showFlightConfirm=function(key,p){
+  _pf[key]=p;
+  document.getElementById('confirm-'+key)?.remove();
+  const otp=parseInt(p.otp)||0;
+  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
+  const otpLabel=otp>=85?'Usually on time':otp>=65?'Sometimes delayed':'Often delayed';
+  const card=document.createElement('div');
+  card.className='confirm-card';card.id='confirm-'+key;
+  card.innerHTML=`
+    <div class="confirm-card-hdr">
+      <div class="confirm-card-icon"><i class="ti ti-plane" style="color:var(--sky);font-size:18px"></i></div>
+      <div>
+        <div class="confirm-card-title">Does this look right?</div>
+        <div class="confirm-card-sub">${p.airline||''} ${p.fno||''} · ${p.ddep||''}</div>
+      </div>
+    </div>
+    <div class="confirm-grid">
+      <div class="cg-item"><div class="cg-lbl">From</div><div class="cg-val">${p.fromFull||p.from||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">To</div><div class="cg-val">${p.toFull||p.to||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Departs</div><div class="cg-val">${p.tdep||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Arrives</div><div class="cg-val">${p.tarr||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">Duration</div><div class="cg-val">${p.dur||'?'}</div></div>
+      <div class="cg-item"><div class="cg-lbl">On-time</div><div class="cg-val"><span class="otp-badge" style="background:${otpCol}22;color:${otpCol}">${otp?otp+'%':'?'} — ${otpLabel}</span></div></div>
+      ${p.depTerminal?`<div class="cg-item"><div class="cg-lbl">Dep terminal</div><div class="cg-val">${p.depTerminal}</div></div>`:''}
+      ${p.arrTerminal?`<div class="cg-item"><div class="cg-lbl">Arr terminal</div><div class="cg-val">${p.arrTerminal}</div></div>`:''}
+    </div>
+    ${p.notes?`<div style="font-size:12px;color:var(--ink-m);background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;line-height:1.6">${p.notes}</div>`:''}
+    <div class="confirm-actions">
+      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="acceptPF('${key}')"><i class="ti ti-check"></i> Yes, that's correct</button>
+      <button class="btn btn-g" onclick="document.getElementById('confirm-${key}').remove()"><i class="ti ti-x"></i> Dismiss</button>
+    </div>`;
+  const statusEl=document.getElementById('af-status-'+key);
+  if(statusEl)statusEl.after(card);
+};
+
+function acceptPF(key){
+  const p=_pf[key];if(!p)return;
+  applyFlightData(key,p);
+  document.getElementById('confirm-'+key)?.remove();
+  toast('Flight saved!');renderFlights();renderHomeFlights();
+}
+
+/* ═══════════ INIT ═══════════ */
+(async()=>{await load();renderHome()})();
+</script>
+</body>
+</html>
