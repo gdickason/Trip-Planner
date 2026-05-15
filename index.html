@@ -406,6 +406,8 @@ input::placeholder,textarea::placeholder{color:var(--ink-xs)}
 .dir-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .dir-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:30px;border:1px solid var(--bd-s);background:var(--card);font-family:var(--ffb);font-size:13px;color:var(--ink);cursor:pointer;text-decoration:none;transition:all .18s}
 .dir-btn:hover{background:var(--forest);color:var(--white);border-color:var(--forest)}
+.explore-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:30px;border:1px solid var(--bd-s);background:transparent;font-family:var(--ffb);font-size:13px;color:var(--ink);cursor:pointer;text-decoration:none;transition:all .18s}
+.explore-btn:hover{background:var(--terra);color:var(--white);border-color:var(--terra)}
 .dir-from{font-size:11px;color:var(--ink-s);margin-bottom:18px;display:flex;align-items:center;gap:4px}
 .sec-ttl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-s);font-weight:500;margin-bottom:10px}
 .ai-panel{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:20px}
@@ -493,7 +495,7 @@ input::placeholder,textarea::placeholder{color:var(--ink-xs)}
         <div class="tb-actions">
           <button class="tb-btn" onclick="goHome()"><i class="ti ti-arrow-left"></i> Home</button>
           <button class="tb-btn" onclick="openEditTrip()"><i class="ti ti-pencil"></i> Edit</button>
-          <button class="tb-btn"><i class="ti ti-share"></i> Share</button>
+          <button class="tb-btn" onclick="copyShareLink()"><i class="ti ti-share"></i> Share</button>
         </div>
       </div>
       <div class="trip-tabs">
@@ -722,18 +724,43 @@ const BASE=[{
 /* ═══════════ STATE ═══════════ */
 let trips=JSON.parse(JSON.stringify(BASE));
 let tid=null,did=null,curAct=null,curActDid=null,tab="itin";
-let addOpen=false,addTabMode="manual",aiSV="",newA=ba();
+let addOpen=false,newA=ba();
 let editTid=null,mMembers=[],mEmoji="🌿";
 let editingActId=null;
-let aiQ2="",aiA2="";
 
 function ba(){return{time:"09:00",name:"",location:"",category:"activity",notes:"",cost:"",duration:""}}
 function T(){return trips.find(t=>t.id===tid)||null}
 function D(){return T()?.days.find(d=>d.id===did)||null}
 
 /* ═══════════ STORAGE ═══════════ */
-async function save(){try{await window.storage.set(SK,JSON.stringify(trips))}catch(e){}}
-async function load(){try{const r=await window.storage.get(SK);if(r?.value)trips=JSON.parse(r.value)}catch(e){}}
+function save(){
+  try{localStorage.setItem(SK,JSON.stringify(trips))}catch(e){console.warn('save failed',e)}
+}
+async function load(){
+  // 1. Check URL hash for shared data
+  try{
+    const hash=window.location.hash;
+    if(hash.startsWith('#share=')){
+      const json=decodeURIComponent(atob(hash.slice(7)));
+      const shared=JSON.parse(json);
+      if(Array.isArray(shared)&&shared.length){
+        trips=shared;save();
+        history.replaceState(null,'',window.location.pathname+window.location.search);
+        return;
+      }
+    }
+  }catch(e){}
+  // 2. localStorage
+  try{const raw=localStorage.getItem(SK);if(raw)trips=JSON.parse(raw)}catch(e){}
+}
+function getShareURL(){
+  try{return window.location.href.split('#')[0]+'#share='+btoa(encodeURIComponent(JSON.stringify(trips)))}
+  catch(e){return ''}
+}
+function copyShareLink(){
+  const url=getShareURL();if(!url){toast('Could not generate link');return}
+  navigator.clipboard.writeText(url).then(()=>toast('Share link copied — anyone with it gets your full itinerary')).catch(()=>prompt('Copy this link:',url));
+}
 
 /* ═══════════ NAV ═══════════ */
 function showView(id){
@@ -1007,18 +1034,8 @@ function buildAddPanel(t,d){
   const div=document.createElement('div');div.className='add-panel';
   div.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="ap-tabs">
-        <button class="apt ${addTabMode==='manual'?'active':''}" onclick="swATab('manual')">Manual</button>
-        <button class="apt ${addTabMode==='ai'?'active':''}" onclick="swATab('ai')">AI Research</button>
-      </div>
+      <span style="font-size:13px;font-weight:600;color:var(--ink-m)">Add activity to ${d.date}</span>
       <button onclick="addOpen=false;renderActs()" style="background:none;border:none;cursor:pointer;color:var(--ink-s);font-size:22px;line-height:1">&times;</button>
-    </div>
-    <div id="ai-sec" style="display:${addTabMode==='ai'?'block':'none'};margin-bottom:12px">
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="ai-si" placeholder="e.g. Agua Azul waterfalls day trip" value="${aiSV}"/>
-        <button class="btn btn-t btn-sm" id="ai-sb" onclick="doAISearch()" style="white-space:nowrap"><i class="ti ti-sparkles"></i> Research</button>
-      </div>
-      <div id="ai-rb" style="display:none;font-size:12px;color:#0E8A65;background:#E2F5EF;border-radius:6px;padding:7px 10px;margin-bottom:8px;align-items:center;gap:5px"><i class="ti ti-check"></i> AI filled in details below. Review and save.</div>
     </div>
     <div class="fg" style="margin-bottom:10px">
       <div class="full fld"><label class="lbl">Activity name *</label><input id="na-nm" value="${newA.name}" placeholder="e.g. Sumidero Canyon kayak"/></div>
@@ -1041,15 +1058,8 @@ function buildAddPanel(t,d){
   setTimeout(()=>{
     ['nm','loc','t','c','d','n'].forEach(f=>{const el=document.getElementById('na-'+f);if(el)el.addEventListener('input',syncForm)});
     document.getElementById('na-cat')?.addEventListener('change',syncForm);
-    document.getElementById('ai-si')?.addEventListener('input',e=>{aiSV=e.target.value});
   },0);
   return div;
-}
-
-function swATab(t){
-  addTabMode=t;
-  document.querySelectorAll('.apt').forEach((b,i)=>{b.classList.toggle('active',(i===0&&t==='manual')||(i===1&&t==='ai'))});
-  const s=document.getElementById('ai-sec');if(s)s.style.display=t==='ai'?'block':'none';
 }
 
 function syncForm(){
@@ -1062,28 +1072,6 @@ function syncForm(){
   newA.notes   =document.getElementById('na-n')?.value||'';
 }
 
-async function doAISearch(){
-  aiSV=document.getElementById('ai-si')?.value||'';if(!aiSV.trim())return;
-  const btn=document.getElementById('ai-sb');
-  if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span>`;btn.disabled=true}
-  try{
-    const t=T();
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",max_tokens:800,
-      messages:[{role:"user",content:`Trip: ${t?.name} (${t?.dates}). Group: couple plus her Mexican parents (active 60s). Research this activity: "${aiSV}". Return ONLY valid JSON (no markdown): {name,location,category,notes,cost,duration,time}. category must be one of: transport,accommodation,food,activity,explore. cost as "$X/person". time as "HH:MM". notes should be 2 to 3 helpful sentences.`}]
-    })});
-    const data=await res.json();
-    const txt=data.content?.find(b=>b.type==='text')?.text||'';
-    const p=JSON.parse(txt.replace(/```json|```/g,'').trim());
-    Object.assign(newA,p);
-    const map={nm:'name',loc:'location',t:'time',c:'cost',d:'duration',n:'notes'};
-    Object.entries(map).forEach(([f,k])=>{const el=document.getElementById('na-'+f);if(el)el.value=newA[k]||''});
-    const cat=document.getElementById('na-cat');if(cat&&newA.category)cat.value=newA.category;
-    const rb=document.getElementById('ai-rb');if(rb)rb.style.display='flex';
-  }catch(e){console.error(e);toast('AI research failed. Try again.')}
-  if(btn){btn.innerHTML=`<i class="ti ti-sparkles"></i> Research`;btn.disabled=false}
-}
-
 function saveAct(){
   syncForm();if(!newA.name.trim()){toast('Enter an activity name');return}
   const a={...newA,id:'u'+Date.now()};
@@ -1091,7 +1079,7 @@ function saveAct(){
     if(d.id!==did)return d;
     return{...d,activities:[...d.activities,a].sort((x,y)=>x.time.localeCompare(y.time))};
   })}});
-  save();addOpen=false;newA=ba();aiSV='';renderActs();renderDays();toast('Activity added');
+  save();addOpen=false;newA=ba();renderActs();renderDays();toast('Activity added');
 }
 
 /* ═══════════ FLIGHTS ═══════════ */
@@ -1147,17 +1135,6 @@ function buildFlightInputCard(key,label,icon,f,t){
       ${f.fno?`<span style="font-size:12px;opacity:.7">${f.airline} ${f.fno}</span>`:''}
     </div>
     <div class="fl-seg-body">
-      <!-- AUTOFILL BAR -->
-      <div style="background:linear-gradient(135deg,rgba(26,74,110,.08),rgba(42,106,158,.08));border:1px solid rgba(26,74,110,.2);border-radius:var(--rl);padding:16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--sky);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-bolt" style="font-size:15px"></i> Auto-fill from flight number</div>
-        <div style="font-size:12px;color:var(--ink-s);margin-bottom:12px">Enter your flight number and date to look up all the details automatically.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="af-fno-${key}" value="${f.fno}" placeholder="Flight # — e.g. AM 123" style="flex:1;min-width:120px"/>
-          <input id="af-date-${key}" value="${f.ddep}" placeholder="Date — e.g. May 22, 2026" style="flex:1;min-width:120px"/>
-          <button class="btn-sky btn btn-sm" id="af-btn-${key}" onclick="autoFill('${key}')" style="flex-shrink:0"><i class="ti ti-search"></i> Look up</button>
-        </div>
-        <div id="af-status-${key}" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:var(--rs)"></div>
-      </div>
       <!-- MANUAL FIELDS -->
       <div class="fl-grid">
         <div class="fld"><label class="lbl">Airline</label><input id="fi-airline-${key}" value="${f.airline}" placeholder="e.g. Aeromexico" onchange="upFlight('${key}','airline',this.value)"/></div>
@@ -1200,99 +1177,6 @@ function liveOTP(key,val){
   if(valEl){valEl.textContent=v?v+'%':'';valEl.style.color=col}
 }
 
-async function autoFill(key){
-  const fno=(document.getElementById('af-fno-'+key)?.value||'').trim();
-  const date=(document.getElementById('af-date-'+key)?.value||'').trim();
-  if(!fno){toast('Enter a flight number');return}
-  const btn=document.getElementById('af-btn-'+key);
-  const status=document.getElementById('af-status-'+key);
-  if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span> Looking up...`;btn.disabled=true}
-  if(status){status.style.display='block';status.style.background='rgba(26,74,110,.08)';status.style.color='var(--sky)';status.textContent=`Searching for flight ${fno}${date?' on '+date:''}...`}
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
-        tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Search for flight ${fno}${date?' on '+date:''} and find: airline name, origin city and airport (full name + IATA code), destination city and airport (full name + IATA code), scheduled departure time (24h), scheduled arrival time (24h), flight duration, departure terminal, arrival terminal, and on-time performance percentage for this route. Search flight tracking sites and airline schedules.\n\nReturn ONLY valid JSON (absolutely no markdown, no explanation):\n{"airline":"full airline name","fno":"flight number","fromFull":"City Name Airport (IATA)","toFull":"City Name Airport (IATA)","from":"IATA","to":"IATA","ddep":"${date||'the flight date'}","tdep":"HH:MM","darr":"date","tarr":"HH:MM","dur":"Xh Ymin","depTerminal":"Terminal X or empty","arrTerminal":"Terminal X or empty","otp":82,"notes":"useful route notes"}`}]
-      })
-    });
-    const data=await res.json();
-    const txt=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('');
-    const match=txt.match(/\{[\s\S]*\}/);
-    if(!match)throw new Error('no json');
-    const p=JSON.parse(match[0]);
-
-    // Show confirmation card
-    showFlightConfirm(key,p);
-    if(status){
-      status.style.background='rgba(14,138,101,.1)';status.style.color='#0E8A65';
-      status.innerHTML=`<i class="ti ti-check"></i> Found! Review the details below.`;
-    }
-  }catch(e){
-    console.error(e);
-    if(status){status.style.background='rgba(190,90,42,.1)';status.style.color='var(--terra)';status.innerHTML=`<i class="ti ti-alert-circle"></i> Could not auto-fill. Try "AM 123" format or fill manually below.`}
-  }
-  if(btn){btn.innerHTML=`<i class="ti ti-search"></i> Look up`;btn.disabled=false}
-}
-
-function showFlightConfirm(key,p){
-  // Remove any existing confirm card for this key
-  document.getElementById('confirm-'+key)?.remove();
-  const otp=parseInt(p.otp)||0;
-  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
-  const otpLabel=otp>=85?'Usually on time':otp>=65?'Sometimes delayed':'Often delayed';
-
-  const card=document.createElement('div');
-  card.className='confirm-card';card.id='confirm-'+key;
-  card.innerHTML=`
-    <div class="confirm-card-hdr">
-      <div class="confirm-card-icon"><i class="ti ti-plane" style="color:var(--sky);font-size:18px"></i></div>
-      <div>
-        <div class="confirm-card-title">Does this look right?</div>
-        <div class="confirm-card-sub">${p.airline||''} ${p.fno||''} · ${p.ddep||''}</div>
-      </div>
-    </div>
-    <div class="confirm-grid">
-      <div class="cg-item"><div class="cg-lbl">From</div><div class="cg-val">${p.fromFull||p.from||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">To</div><div class="cg-val">${p.toFull||p.to||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Departs</div><div class="cg-val">${p.tdep||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Arrives</div><div class="cg-val">${p.tarr||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Duration</div><div class="cg-val">${p.dur||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">On-time</div><div class="cg-val"><span class="otp-badge" style="background:${otpCol}20;color:${otpCol}">${otp?otp+'%':'-'} ${otpLabel}</span></div></div>
-      ${p.depTerminal?`<div class="cg-item"><div class="cg-lbl">Dep terminal</div><div class="cg-val">${p.depTerminal}</div></div>`:''}
-      ${p.arrTerminal?`<div class="cg-item"><div class="cg-lbl">Arr terminal</div><div class="cg-val">${p.arrTerminal}</div></div>`:''}
-    </div>
-    ${p.notes?`<div style="font-size:12px;color:var(--ink-m);background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px">${p.notes}</div>`:''}
-    <div class="confirm-actions">
-      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="acceptFlightData('${key}',${JSON.stringify(p).replace(/'/g,"&#39;").replace(/"/g,'&quot;')})"><i class="ti ti-check"></i> Yes, that's correct</button>
-      <button class="btn btn-g" onclick="document.getElementById('confirm-${key}').remove()"><i class="ti ti-x"></i> Dismiss</button>
-    </div>`;
-  // Insert above the fl-seg-body's form
-  const afBar=document.getElementById('af-status-'+key)?.closest('div[style*="border-radius:var(--rl)"]');
-  afBar?.after(card);
-}
-
-function acceptFlightData(key,p){
-  // p comes as an object parsed from the JSON attr — but since we're using onclick, re-parse from a stored temp
-  // Instead call a helper that reads from a data attr
-  const card=document.getElementById('confirm-'+key);
-  // We need to get p from the card dataset
-  applyFlightData(key,p);
-  card?.remove();
-  toast('Flight saved!');
-  renderFlights();
-}
-
-// Called via onclick with JSON string escaped
-window._pendingFlight={};
-function acceptFlightDataStr(key){
-  const p=window._pendingFlight[key];
-  if(!p)return;
-  applyFlightData(key,p);
-  document.getElementById('confirm-'+key)?.remove();
-  toast('Flight saved!');renderFlights();
-}
 
 function applyFlightData(key,p){
   trips=trips.map(t=>{
@@ -1499,7 +1383,7 @@ function addTodo(s){const inp=document.getElementById('ta-'+s);const txt=inp?.va
 
 /* ═══════════ ACTIVITY DETAIL ═══════════ */
 function renderActDetail(a,t,prev){
-  aiQ2='';aiA2='';
+
   const cat=CAT[a.category]||CAT.activity;
   const hero=document.getElementById('act-hero');
   hero.style.background=`linear-gradient(148deg,${cat.hbg} 0%,${cat.hbg}CC 100%)`;
@@ -1508,6 +1392,8 @@ function renderActDetail(a,t,prev){
   document.getElementById('act-name').textContent=a.name;
   document.getElementById('act-sub').innerHTML=`<span>${a.time||'No time'}</span><span style="opacity:.5;margin:0 2px">·</span><span style="text-transform:capitalize;font-weight:500">${a.category}</span>${a.duration?`<span style="opacity:.5;margin:0 2px">·</span><span>${a.duration}</span>`:''}`;
   const dest=encodeURIComponent(a.location||a.name+', Chiapas');
+  const encLocFull=encodeURIComponent((a.location||a.name+', Chiapas'));
+  const encName=encodeURIComponent(a.name+(a.location?` ${a.location}`:''));
   const orig=prev?encodeURIComponent(prev.location):'';
   const mb=`https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=`;
   const stats=[a.time?{l:'Time',v:a.time,i:'ti-clock'}:null,a.duration?{l:'Duration',v:a.duration,i:'ti-hourglass'}:null,a.cost?{l:'Cost',v:a.cost,i:'ti-coin'}:null].filter(Boolean);
@@ -1523,32 +1409,27 @@ function renderActDetail(a,t,prev){
       <a href="https://www.google.com/maps/search/?api=1&query=${dest}" target="_blank" class="dir-btn"><i class="ti ti-map-2"></i> Map</a>
     </div>
     ${prev?`<p class="dir-from" style="font-size:11px;color:var(--ink-s);margin-bottom:18px;display:flex;align-items:center;gap:4px"><i class="ti ti-corner-down-right" style="font-size:11px"></i> From: ${prev.name}</p>`:'<div style="height:16px"></div>'}
-    <div class="ai-panel">
-      <div class="ai-phdr"><i class="ti ti-sparkles" style="font-size:16px"></i><span style="font-size:13px;font-weight:500">Ask about this activity</span></div>
-      <div class="ai-pbody">
-        <div class="ai-irow"><input id="aiq" placeholder="Hours, what to bring, nearby food..." onkeydown="if(event.key==='Enter')askAI()"/><button class="ai-abtn" id="aib" onclick="askAI()"><i class="ti ti-send"></i> Ask</button></div>
-        <div class="qq-row">${["What time does it open?","What should we bring?","Nearby lunch spots","Good for older adults?"].map(q=>`<button class="qq" onclick="setQ('${q.replace(/'/g,"&#39;")}')">${q}</button>`).join('')}</div>
-        <div id="aia"></div>
+    <div style="background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:20px">
+      <div style="padding:14px 16px;background:linear-gradient(135deg,var(--terra),#D97A4E);color:var(--white);display:flex;align-items:center;gap:8px">
+        <i class="ti ti-search" style="font-size:16px"></i>
+        <span style="font-size:13px;font-weight:500">Explore nearby</span>
+        <span style="font-size:11px;opacity:.65;margin-left:4px">Opens Google Maps</span>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <a href="https://www.google.com/maps/search/restaurants+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-tools-kitchen-2"></i> Restaurants</a>
+          <a href="https://www.google.com/maps/search/cafes+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-coffee"></i> Cafes</a>
+          <a href="https://www.google.com/maps/search/bars+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-glass"></i> Bars</a>
+          <a href="https://www.google.com/maps/search/things+to+do+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-sparkles"></i> Things to do</a>
+          <a href="https://www.google.com/maps/search/supermarket+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-shopping-cart"></i> Supermarket</a>
+          <a href="https://www.google.com/maps/search/pharmacy+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-first-aid-kit"></i> Pharmacy</a>
+          <a href="https://www.google.com/maps/search/ATM+near+${encLocFull}" target="_blank" class="explore-btn"><i class="ti ti-credit-card"></i> ATM</a>
+        </div>
+        <a href="https://www.google.com/search?q=${encName}" target="_blank" style="font-size:12px;color:var(--sky);display:flex;align-items:center;gap:4px;text-decoration:none">
+          <i class="ti ti-brand-google" style="font-size:14px"></i> Search Google for "${a.name}"
+        </a>
       </div>
     </div>`;
-}
-function setQ(q){aiQ2=q;const inp=document.getElementById('aiq');if(inp)inp.value=q}
-async function askAI(){
-  const inp=document.getElementById('aiq');aiQ2=inp?.value||aiQ2;
-  if(!aiQ2.trim()||!curAct)return;
-  const aia=document.getElementById('aia');
-  aia.innerHTML=`<div class="thinking"><div class="d"></div><div class="d"></div><div class="d"></div><span style="margin-left:6px;font-size:13px;color:var(--ink-s)">Researching...</span></div>`;
-  const btn=document.getElementById('aib');if(btn){btn.innerHTML=`<span class="spin"><i class="ti ti-refresh"></i></span>`;btn.disabled=true}
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",max_tokens:500,
-      messages:[{role:"user",content:`Activity: "${curAct.name}" at ${curAct.location}, Chiapas, Mexico, late May 2026. Group: couple plus her Mexican parents (active 60s). Question: ${aiQ2}. Answer in 2 to 4 sentences, practical and warm.`}]
-    })});
-    const data=await res.json();
-    aiA2=data.content?.find(b=>b.type==='text')?.text||'Something went wrong.';
-    aia.innerHTML=`<div class="ai-ans">${aiA2}</div>`;
-  }catch(e){aia.innerHTML=`<div class="ai-ans">Something went wrong. Try again.</div>`}
-  if(btn){btn.innerHTML=`<i class="ti ti-send"></i> Ask`;btn.disabled=false}
 }
 
 /* ═══════════ TRIP MODAL ═══════════ */
@@ -1602,53 +1483,6 @@ function openM(id){document.getElementById(id).classList.add('open')}
 function closeM(id){document.getElementById(id).classList.remove('open')}
 function bgClose(e,id){if(e.target===document.getElementById(id))closeM(id)}
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2400)}
-
-/* Intercept acceptFlightData to handle JSON passed through onclick */
-// Use a simpler approach: store pending data in a map and reference by key
-const _pf={};
-// Override showFlightConfirm to store pending data
-const _origShowFC=showFlightConfirm;
-window.showFlightConfirm=function(key,p){
-  _pf[key]=p;
-  document.getElementById('confirm-'+key)?.remove();
-  const otp=parseInt(p.otp)||0;
-  const otpCol=otp>=85?'#0E8A65':otp>=65?'#9A6010':'#BE5A2A';
-  const otpLabel=otp>=85?'Usually on time':otp>=65?'Sometimes delayed':'Often delayed';
-  const card=document.createElement('div');
-  card.className='confirm-card';card.id='confirm-'+key;
-  card.innerHTML=`
-    <div class="confirm-card-hdr">
-      <div class="confirm-card-icon"><i class="ti ti-plane" style="color:var(--sky);font-size:18px"></i></div>
-      <div>
-        <div class="confirm-card-title">Does this look right?</div>
-        <div class="confirm-card-sub">${p.airline||''} ${p.fno||''} · ${p.ddep||''}</div>
-      </div>
-    </div>
-    <div class="confirm-grid">
-      <div class="cg-item"><div class="cg-lbl">From</div><div class="cg-val">${p.fromFull||p.from||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">To</div><div class="cg-val">${p.toFull||p.to||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Departs</div><div class="cg-val">${p.tdep||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Arrives</div><div class="cg-val">${p.tarr||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">Duration</div><div class="cg-val">${p.dur||'?'}</div></div>
-      <div class="cg-item"><div class="cg-lbl">On-time</div><div class="cg-val"><span class="otp-badge" style="background:${otpCol}22;color:${otpCol}">${otp?otp+'%':'?'} — ${otpLabel}</span></div></div>
-      ${p.depTerminal?`<div class="cg-item"><div class="cg-lbl">Dep terminal</div><div class="cg-val">${p.depTerminal}</div></div>`:''}
-      ${p.arrTerminal?`<div class="cg-item"><div class="cg-lbl">Arr terminal</div><div class="cg-val">${p.arrTerminal}</div></div>`:''}
-    </div>
-    ${p.notes?`<div style="font-size:12px;color:var(--ink-m);background:var(--cream-d);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;line-height:1.6">${p.notes}</div>`:''}
-    <div class="confirm-actions">
-      <button class="btn btn-f" style="flex:1;justify-content:center" onclick="acceptPF('${key}')"><i class="ti ti-check"></i> Yes, that's correct</button>
-      <button class="btn btn-g" onclick="document.getElementById('confirm-${key}').remove()"><i class="ti ti-x"></i> Dismiss</button>
-    </div>`;
-  const statusEl=document.getElementById('af-status-'+key);
-  if(statusEl)statusEl.after(card);
-};
-
-function acceptPF(key){
-  const p=_pf[key];if(!p)return;
-  applyFlightData(key,p);
-  document.getElementById('confirm-'+key)?.remove();
-  toast('Flight saved!');renderFlights();renderHomeFlights();
-}
 
 /* ═══════════ INIT ═══════════ */
 (async()=>{await load();renderHome()})();
